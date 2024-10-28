@@ -62,10 +62,16 @@ class Mixer:
         self.compute_family_of_graphs(blacklist=blacklist)
 
         if self.reduced:
-            self.base_G_reduced=nx.empty_graph()
+            if self.digraph:
+                self.base_G_reduced=nx.DiGraph()
+            else:
+                self.base_G_reduced=nx.empty_graph()
             self.base_G_list_reduced=[]
         else:
-            self.base_G=nx.empty_graph()
+            if self.digraph:
+                self.base_G=nx.DiGraph()
+            else:
+                self.base_G=nx.empty_graph()
             self.base_G_list=[]
 
         if whitelist:
@@ -400,7 +406,7 @@ class Mixer:
                 if nedges >= self.nB - 1:
                     if first:
                         G, G_list = self.combine_graphs(subset)
-                        if nx.is_connected(G):
+                        if nx.is_connected(G.to_undirected()):
                             if self.reduced:
                                 self.solution_reduced=[]
                                 self.solution_reduced_Xl=[]
@@ -420,7 +426,7 @@ class Mixer:
                             sol_cost=self.solution_cost
                         if cost <= sol_cost:
                             G, G_list = self.combine_graphs(subset)
-                            if nx.is_connected(G):
+                            if nx.is_connected(G.to_undirected()):
                                 if cost<sol_cost:
                                     if self.reduced:
                                         self.solution_reduced=[]
