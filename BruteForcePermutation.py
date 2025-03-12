@@ -202,7 +202,40 @@ def find_solution(basis_states,maxcost=100,maxdepth=5):
 def find_optimal_permutation(basis_states,selection,maxcost=100,maxdepth=5):
     bs = [basis_states[s] for s in selection]
     best_solution, best_solution_cost, best_solution_result, best_sorted_bits = find_solution(bs,maxcost,maxdepth)
-    return best_solution, best_solution_cost
+    return best_solution, 
+
+
+def decompose_toffoli(m):
+    if m == 0:
+        num_cx = 0
+        num_ry = 0
+    elif m == 1:
+        num_cx = 1
+        num_ry = 0
+    elif m == 2:
+        num_cx = 3
+        num_ry = 4
+    else:
+        num_cx = 2*m-1
+        num_ry = 2*m
+    return num_cx, num_ry
+        
+def decompose_mcrz(m):
+    if m == 0:
+        num_cx = 0
+        num_rz = 1
+        num_ry = 0
+    elif m == 1:
+        num_cx = 2
+        num_rz = 2
+        num_ry = 0
+    else:
+        num_cx, num_ry = decompose_toffoli(m-1)
+        num_cx *= 2
+        num_cx += 4
+        num_rz = 4
+        num_ry *= 2
+    return num_cx, num_rz, num_ry
 
 # probably don't need this anymore:
 """
