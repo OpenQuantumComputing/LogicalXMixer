@@ -1,0 +1,103 @@
+Reduced case: 
+ 
+
+Num of CX gates:
+Pauli-string      brute-force    old
+--------------  -------------  -----
+IIXI                        6      8
+IXXX                        8      8
+IXXX                        8     10
+IXXX                        4     10
+XIIX                        8      8
+XIXI                        8      6
+XXIX                        8     10
+XXXI                        8      8
+IXIX                        8     16
+XIXX                       10     20
+XIII                        6      8
+XXXX                       12     24
+XXII                        8     12
+IIXX                        4      6
+IXII                        4      2
+
+ 
+
+Num of rotational gates:
+Pauli-string      brute-force    old
+--------------  -------------  -----
+IIXI                        4      2
+IXXX                        2      4
+IXXX                        2      4
+IXXX                        2      4
+XIIX                        2      4
+XIXI                        2      4
+XXIX                        2      4
+XXXI                        2      4
+IXIX                        4      2
+XIXX                        4      2
+XIII                        4      2
+XXXX                        4      2
+XXII                        4      2
+IIXX                        2      4
+IXII                        2      4
+
+
+
+Non-reduced case: 
+ 
+
+Num of CX gates:
+Pauli-string      brute-force    old
+--------------  -------------  -----
+IIXI                        6     24
+IXXX                        8     20
+IXXX                        8     20
+IXXX                        4     20
+XIIX                        8     16
+XIXI                        8     16
+XXIX                        8     20
+XXXI                        8     20
+IXIX                        8     32
+XIXX                       10     40
+XIII                        6     24
+XXXX                       12     48
+XXII                        8     32
+IIXX                        4     12
+IXII                        4     12
+
+ 
+
+Num of rotational gates:
+Pauli-string      brute-force    old
+--------------  -------------  -----
+IIXI                        4      2
+IXXX                        2      4
+IXXX                        2      4
+IXXX                        2      4
+XIIX                        2      4
+XIXI                        2      4
+XXIX                        2      4
+XXXI                        2      4
+IXIX                        4      2
+XIXX                        4      2
+XIII                        4      2
+XXXX                        4      2
+XXII                        4      2
+IIXX                        2      4
+IXII                        2      4
+
+
+
+
+Brute force costs (random examples):
+  Num qubits    Num generators    CX cost    R cost
+------------  ----------------  ---------  --------
+           3                 1          4         2
+           3                 2          0         1
+           4                 1         10         4
+           4                 2          6         2
+           4                 3          0         1
+           5                 1         16        12
+           5                 2         14         4
+           5                 3          8         2
+           5                 4          4         1

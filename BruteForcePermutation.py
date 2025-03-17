@@ -7,9 +7,9 @@ from random import *
 
 
 # Determine the relative costs of X, CX, and CCX. These may vary depending on the hardware and error mitigation/correction methods
-cost_of_x = 0
-cost_of_cx = 1
-cost_of_ccx = 1000
+cost_of_x = 1
+cost_of_cx = 40
+cost_of_ccx = 1000000
 
 
 
@@ -117,7 +117,7 @@ def iterate_through_node(num_qubits, maxdepth, basis_states, num_qubits_to_sort,
             best_sorted_bits = sorted_bits
     
     order = ['x','cx','ccx']
-    shuffle(order)
+    #shuffle(order)
     for o in order:
     
         # try all X-gates:
