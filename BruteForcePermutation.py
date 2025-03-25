@@ -208,34 +208,90 @@ def find_optimal_permutation(basis_states,selection,maxcost=100,maxdepth=5):
 def decompose_toffoli(m):
     if m == 0:
         num_cx = 0
-        num_ry = 0
+        num_r = 0
     elif m == 1:
         num_cx = 1
-        num_ry = 0
+        num_r = 0
     elif m == 2:
-        num_cx = 3
-        num_ry = 4
+        num_cx = 6
+        num_r = 2 + 4 + 3
+    elif m == 3:
+        num_cx = 24
+        num_r = 10 + 16 + 12 + 2 + 2
+    elif m == 4:
+        num_cx = 60
+        num_r = 26 + 40 + 30 + 6 + 6
+    elif m == 5:
+        num_cx = 96
+        num_r = 42 + 64 + 48 + 10 + 10
     else:
-        num_cx = 2*m-1
-        num_ry = 2*m
-    return num_cx, num_ry
+        num_cx = 10000
+        num_r = 10000
+    return num_cx, num_r
         
 def decompose_mcrz(m):
     if m == 0:
         num_cx = 0
-        num_rz = 1
-        num_ry = 0
+        num_r = 1
+        
     elif m == 1:
         num_cx = 2
-        num_rz = 2
-        num_ry = 0
+        num_r = 2
+        
     else:
-        num_cx, num_ry = decompose_toffoli(m-1)
+        num_cx, num_r = decompose_toffoli(m-1)
         num_cx *= 2
-        num_cx += 4
-        num_rz = 4
-        num_ry *= 2
-    return num_cx, num_rz, num_ry
+        num_cx += 6
+        num_r += 9
+        
+    return num_cx, num_r
+
+
+
+
+def random_bitstring(n):
+    bitstring = ''
+    for i in range(n):
+        bitstring += choice(['0','1'])
+    return bitstring
+
+def random_paulistring(n):
+    paulistring = ''
+    for i in range(n):
+        paulistring += choice(['I','X'])
+    return paulistring
+
+def multiply_paulistrings(p1,p2):
+    p = ''
+    for i in range(len(p1)):
+        if p1[i] == p2[i]:
+            p += 'I'
+        else:
+            p += 'X'
+    return p
+
+def generate_pauli_group(pauli_strings,n):
+    p0 = ''
+    for i in range(n):
+        p0 += 'I'
+    g = [p0]
+    for p1 in pauli_strings:
+        for p2 in g:
+            p3 = multiply_paulistrings(p1,p2)
+            if p3 not in g:
+                g.append(p3)
+    return g
+
+def multiply_pauli_with_bitstring(pauli,bitstring):
+    b2 = ''
+    for i in range(len(pauli)):
+        if pauli[i] == 'I':
+            b2 += bitstring[i]
+        elif pauli[i] == 'X' and bitstring[i] == '0':
+            b2 += '1'
+        elif pauli[i] == 'X' and bitstring[i] == '1':
+            b2 += '0'
+    return b2
 
 # probably don't need this anymore:
 """
