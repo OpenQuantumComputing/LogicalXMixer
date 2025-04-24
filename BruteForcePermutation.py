@@ -229,20 +229,34 @@ def decompose_toffoli(m):
         num_r = 10000
     return num_cx, num_r
         
-def decompose_mcrz(m):
+def decompose_mcrx(m):
     if m == 0:
         num_cx = 0
         num_r = 1
         
     elif m == 1:
         num_cx = 2
-        num_r = 2
+        num_r = 3
+
+    elif m == 2:
+        num_cx = 4
+        num_r = 4
+        
+    elif m == 3:
+        num_cx, num_r = decompose_toffoli(2)
+        num_cx *= 2
+        num_r *= 2
+        num_cx += 2
+        num_r += 4
+    
+    elif m == 4:
+        num_cx, num_r = decompose_toffoli(2)
+        num_cx *= 4
+        num_r *= 4
+        num_r += 4
         
     else:
-        num_cx, num_r = decompose_toffoli(m-1)
-        num_cx *= 2
-        num_cx += 6
-        num_r += 9
+        num_cx, num_r = 1000, 1000
         
     return num_cx, num_r
 
