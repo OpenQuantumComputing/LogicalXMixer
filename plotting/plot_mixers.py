@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.path import Path
 import numpy as np
+import sys
+sys.path.append('../')
 from utils import pauli_int_to_str
 import math
 
