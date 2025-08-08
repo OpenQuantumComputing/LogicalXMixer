@@ -1,5 +1,18 @@
 import unittest
-from Mixer import LXMixer
+import copy
+from pathlib import Path
+import sys
+
+# Current file's directory
+current_dir = Path(__file__).resolve().parent
+
+# Go up one level
+parent_dir = current_dir.parent
+
+# Add to sys.path
+sys.path.append(str(parent_dir))
+
+from Mixer import LXMixer, Orbit
 
 class TestLXMixer(unittest.TestCase):
     def test_compute_family_of_graphs(self):
@@ -88,9 +101,9 @@ class TestStabilizer(unittest.TestCase):
         for case in self.test_cases:
             with self.subTest(case=case):
                 case = copy.deepcopy(case)
-                stab = Stabilizer(B=case["B"], n=case["n"], orbit_dictionary=case["orbit_dictionary"])
-                stab.compute_minimal_generating_sets()
-                for orbit_key, orbit in stab.orbit_dictionary.items():
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                lx.compute_minimal_generating_sets()
+                for orbit_key, orbit in lx.orbits.items():
                     with self.subTest(orbit_key=orbit_key):
                         self.assertEqual(orbit.Zs, case["expected_mgs"][orbit_key])
     
@@ -98,13 +111,13 @@ class TestStabilizer(unittest.TestCase):
         for case in self.test_cases:
             with self.subTest(case=case):
                 case = copy.deepcopy(case)
-                stab = Stabilizer(B=case["B"], n=case["n"], orbit_dictionary=case["orbit_dictionary"])
-                for orbit_key, orbit in stab.orbit_dictionary.items():
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                for orbit_key, orbit in lx.orbits.items():
                     with self.subTest(orbit_key=orbit_key):
                         orbit.Zs = case["expected_mgs"][orbit_key]
                 
-                stab.compute_projector_stabilizers()
-                for orbit_key, orbit in stab.orbit_dictionary.items():
+                lx.compute_projector_stabilizers()
+                for orbit_key, orbit in lx.orbits.items():
                     with self.subTest(orbit_key=orbit_key):
                         self.assertEqual(orbit.Zs, case["expected_projectors"][orbit_key])
 
