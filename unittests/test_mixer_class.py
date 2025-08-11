@@ -120,7 +120,7 @@ class TestStabilizer(unittest.TestCase):
                 },
                 "expected_Xs": [11, 14, 7],
                 "expected_mgs": {(0, 2, 3, 4): [(-1, 14), (1, 11)], (0, 1): [(-1, 8), (-1, 4), (1, 1)], (1, 2): [(-1, 8), (1, 2), (-1, 5)], (1, 3): [(-1, 4), (1, 2), (1, 1)], (1, 4): [(1, 12), (-1, 10), (-1, 9)]}, #TODO burde ikke denne være []??
-                "expected_projectors": {(0,2,3,4): [(1,0), (-1, 14), (-1, 5), (1, 11)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]}
+                "expected_projectors": {(0,2,3,4): [(1, 0), (1, 11), (-1, 14), (-1, 5)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]}
                 # "expected_orbits": {(0,1,2,3,4,5,6,7) : [11, 14, 7]},
                 # "expected_mgs": {(0,1,2,3,4,5,6,7):[(1, 13)]},
                 # "expected_projectors": {(0,2,3,4): [(1,0), (-1, 14), (-1, 5), (1, 11)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]}
@@ -165,77 +165,22 @@ class TestStabilizer(unittest.TestCase):
                     with self.subTest(orbit_key=orbit_key):
                         self.assertEqual(orbit.Zs, case["expected_mgs"][orbit_key])
     
-    # def test_compute_projector_stabilizers(self):
-    #     for case in self.test_cases:
-    #         with self.subTest(case=case):
-    #             case = copy.deepcopy(case)
-    #             lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
-    #             lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
-    #             lx.orbits = case["expected_orbits"]
-
-    #             for orbit_key, orbit in lx.orbits.items():
-    #                 with self.subTest(orbit_key=orbit_key):
-    #                     orbit.Zs = case["expected_mgs"][orbit_key]
-                
-    #             lx.compute_projector_stabilizers()
-    #             for orbit_key, orbit in lx.orbits.items():
-    #                 with self.subTest(orbit_key=orbit_key):
-    #                     self.assertEqual(orbit.Zs, case["expected_projectors"][orbit_key])
-    
-    """
-    def test_compute_family_of_graphs(self):
+    def test_compute_projector_stabilizers(self):
         for case in self.test_cases:
             with self.subTest(case=case):
                 case = copy.deepcopy(case)
                 lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
-                correct_family_of_valid_graphs = {
-                    0b0010: [(0, 1)],
-                    0b0101: [(1, 2)],
-                    0b0111: [(0, 2), (3, 4)],
-                    0b1000: [(1, 3)],
-                    0b1010: [(0, 3), (2, 4)],
-                    0b1101: [(0, 4), (2, 3)],
-                    0b1111: [(1, 4)]
-                }
-        
-                lx.compute_family_of_valid_graphs()
-        
-                # Sort edges for comparison
-                for key in correct_family_of_valid_graphs:
-                    correct_family_of_valid_graphs[key] = sorted(correct_family_of_valid_graphs[key])
-                
-                for key in lx.family_of_valid_graphs:
-                    lx.family_of_valid_graphs[key] = sorted(lx.family_of_valid_graphs[key])
-                
-                self.assertEqual(lx.family_of_valid_graphs, correct_family_of_valid_graphs)
-    
-    def test_compute_all_orbits(self):
-        correct_orbits = {
-            (0, 2, 3, 4) : [0b1101, 0b1010],
-            (0, 1) : [0b0010],
-            (1, 2) : [0b0101],
-            (1, 3) : [0b1000],
-            (1, 4) : [0b1111]
-        }
-        
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.orbits = case["expected_orbits"]
 
-        lx.family_of_valid_graphs = {
-            0b0010: [(0, 1)],
-            0b0101: [(1, 2)],
-            0b0111: [(0, 2), (3, 4)],
-            0b1000: [(1, 3)],
-            0b1010: [(0, 3), (2, 4)],
-            0b1101: [(0, 4), (2, 3)],
-            0b1111: [(1, 4)]
-        }
-        lx.compute_all_orbits()
-        
-        orbits = {}
-        for nodes, orbit in lx.orbits.items():
-            orbits[nodes] = orbit.Xs
-        
-        self.assertEqual(orbits, correct_orbits)
-    """
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        orbit.Zs = case["expected_mgs"][orbit_key]
+                
+                lx.compute_projector_stabilizers()
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        self.assertEqual(orbit.Zs, case["expected_projectors"][orbit_key])
     
 if __name__ == '__main__':
     unittest.main()
