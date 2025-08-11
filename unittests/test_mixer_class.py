@@ -119,13 +119,14 @@ class TestStabilizer(unittest.TestCase):
                     (1, 4) : Orbit([0b1111])
                 },
                 "expected_Xs": [11, 14, 7],
-                "expected_mgs": [[(1, 13)]], #TODO burde ikke denne være []??
+                "expected_mgs": {(0, 2, 3, 4): [(-1, 14), (1, 11)], (0, 1): [(-1, 8), (-1, 4), (1, 1)], (1, 2): [(-1, 8), (1, 2), (-1, 5)], (1, 3): [(-1, 4), (1, 2), (1, 1)], (1, 4): [(1, 12), (-1, 10), (-1, 9)]}, #TODO burde ikke denne være []??
                 "expected_projectors": {(0,2,3,4): [(1,0), (-1, 14), (-1, 5), (1, 11)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]}
                 # "expected_orbits": {(0,1,2,3,4,5,6,7) : [11, 14, 7]},
                 # "expected_mgs": {(0,1,2,3,4,5,6,7):[(1, 13)]},
                 # "expected_projectors": {(0,2,3,4): [(1,0), (-1, 14), (-1, 5), (1, 11)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]}
             }
         ]
+    
     def test_compute_family_of_graphs(self):
         for case in self.test_cases:
             with self.subTest(case=case):
@@ -150,7 +151,6 @@ class TestStabilizer(unittest.TestCase):
                 with self.subTest("Orbits"):
                     self.assertEqual(lx.orbits, case["expected_orbits"])
         
-
     def test_compute_minimal_generating_sets(self):
         for case in self.test_cases:
             with self.subTest(case=case):
