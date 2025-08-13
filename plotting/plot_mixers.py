@@ -166,7 +166,7 @@ class Plotter:
         if not isinstance(ax, (list, np.ndarray)):  # Ensure ax is iterable, even if there's only one subplot/best solution.
             ax = [ax]
         for plot_n, combination in enumerate(self.LX.best_combinations):
-            if self.LX.method == "semi_restricted_suborbits":
+            if self.LX.method == "semi_restricted_suborbits" and not isinstance(combination[0][0], int):
                 combination = tuple(tuple(node for edge in combo for node in edge) for combo in combination)
             self.draw_mixer_graph(ax[plot_n], combination, self.LX.best_Xs[plot_n], r=r, lw=lw, cmap=cmap) # Draw the mixer graph for each best combination.
 
@@ -225,8 +225,8 @@ class Plotter:
                     else:
                         y0 = self.LX.nB - edge[1]
                         y1 = self.LX.nB - edge[0]
-                    start = (X0, y0)
-                    end = (X0, y1)
+                    start = (self.x0, y0)
+                    end = (self.x0, y1)
                     self.draw_arc(ax[plot_n], start, end, color=colors[X_color], r=r, lw=lw)
                 X_color += 1
             

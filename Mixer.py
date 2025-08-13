@@ -306,21 +306,42 @@ class LXMixer:
             # Updating the orbit dataclass instance so that we disregard the minimal generating sets and only keep the projectors for Zs
             orbit.Zs = projector  
             
+    # def __group_suborbits(self):
+    #     """
+    #     Groups the suborbits in the orbits by their logical X operators, preserving the connectivity structure.
+    #     """
+    #     for orbit in self.orbits.values():
+    #         unconnected_suborbits = {}
+    #         for n in range(1, len(orbit.Xs)+1): # Iterate over the number of logical X operators in the orbit.
+    #             for X_combo in (combo for combo in combinations(orbit.Xs, n)):
+    #                 unconnected_nodes = []
+    #                 cost = float("inf")
+    #                 for subnodes, suborbit in orbit.suborbits.items():
+    #                     if set(suborbit.Xs) == set(X_combo):
+    #                         unconnected_nodes.append(subnodes)
+    #                         cost = suborbit.cost
+    #                     if len(unconnected_nodes) > 0: unconnected_suborbits[tuple(unconnected_nodes)] = Suborbit(Xs=list(X_combo), cost=cost)
+    #                 orbit.suborbits = unconnected_suborbits
+    
     def __group_suborbits(self):
         """
         Groups the suborbits in the orbits by their logical X operators, preserving the connectivity structure.
         """
         for orbit in self.orbits.values():
-            unconnected_suborbits = {}
-            for X_combo in (combo for n in range(1, len(orbit.Xs)+1) for combo in combinations(orbit.Xs, n)):
-                unconnected_nodes = []
-                cost = float("inf")
-                for subnodes, suborbit in list(orbit.suborbits.items()):
-                    if set(suborbit.Xs) == set(X_combo):
-                        unconnected_nodes.append(subnodes)
-                        cost = suborbit.cost
-                    if len(unconnected_nodes) > 0: unconnected_suborbits[tuple(unconnected_nodes)] = Suborbit(Xs=list(X_combo), cost=cost)
-                orbit.suborbits = unconnected_suborbits
+            grouped_suborbits = {}
+            for n in range(1, len(orbit.Xs)+1):
+                for X_combo in combinations(orbit.Xs, n):
+                    matching_subnodes = [
+                        subnodes for subnodes, suborbit in orbit.suborbits.items()
+                        if set(suborbit.Xs) == set(X_combo)
+                    ]
+                    if matching_subnodes:
+                        # Use the minimum cost among matching suborbits
+                        min_cost = min(
+                            orbit.suborbits[subnodes].cost for subnodes in matching_subnodes
+                        )
+                        grouped_suborbits[tuple(matching_subnodes)] = Suborbit(Xs=list(X_combo), cost=min_cost)
+            orbit.suborbits = grouped_suborbits
     
     def compute_costs(self):
         """
@@ -357,7 +378,7 @@ class LXMixer:
         best_main_combinations = [] # List to store the best main combinations of the largest orbits (if using semi-restricted suborbits).
         N = range(2, min([self.nB, len(self.orbits)+1])) # Range of the number of orbits to combine. Goes from 2 to |B|-1 (worst-case is a chain).
         for n in N:
-            for main_combination in tqdm(combinations(self.orbits.keys(), n), desc=f"Combo size {n}/{len(N)}"):
+            for main_combination in tqdm(combinations(self.orbits.keys(), n), desc=f"Combo size {n}/{min([self.nB, len(self.orbits)+1])}"):
                 if len({node for nodes in main_combination for node in nodes}) != self.nB: # If the combination does not cover all nodes in B, skip it.
                     continue
                 if not is_connected(main_combination): # If the combination doesn't connect all nodes or is unconnected, skip.
@@ -420,8 +441,8 @@ if __name__ == '__main__':
     
     # nL = 4
     # B = [0b1110, 0b1100, 0b1001, 0b0100, 0b0011] # nB = 5, example from the article
-    B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100] # nB = 6
-    # B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100, 0b0010] # nB = 7
+    # B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100] # nB = 6
+    B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100, 0b0010] # nB = 7
     # B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100, 0b0010, 0b0011] # nB = 8, 8-orbit
     # B = [0b1110, 0b1100, 0b1001, 0b0100, 0b0011, 0b0000, 0b1111, 0b1011, 
     #      0b1101, 0b0110, 0b0010, 0b0101, 0b1000, 0b0001, 0b0111] # nB = 15
