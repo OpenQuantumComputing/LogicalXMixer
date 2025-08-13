@@ -17,27 +17,36 @@ from Mixer import LXMixer, Orbit
 class TestLXMixer(unittest.TestCase):
     def setUp(self):
         self.test_cases = [
-            # {
-            #     "B": [0b1011, 0b1100, 0b0111, 0b0000, 0b1110, 0b1001, 0b0010, 0b0101],
-            #     "n": 4,
-            #     "orbits": {(0,1,2,3,4,5,6,7): Orbit(Xs={11, 14, 7})},
-            #     "expected_Xs": [11, 14, 7],
-            #     "expected_mgs": [(1, 13)], #TODO burde ikke denne være []??
-            #     "expected_projectors": {(0,1,2,3,4,5,6,7): [(1, 0), (1, 13)]} #TODO hvorfor kan den ikke lukkes med [] istedenfor {}???
-            #     # "expected_orbits": {(0,1,2,3,4,5,6,7) : [11, 14, 7]},
-            #     # "expected_mgs": {(0,1,2,3,4,5,6,7):[(1, 13)]},
-            #     # "expected_projectors": {(0,1,2,3,4,5,6,7): [(1, 0), (1, 13)]}
-            # },
-            # {
-            #     "B": [0b11000, 0b00100, 0b01101, 0b10001],
-            #     "n": 5,
-            #     "orbits": {(0,1,2,3): Orbit(Xs={9, 28})},
-            #     "expected_Xs": [9, 28],
-            #     "expected_mgs": [(1, 2), (-1, 20), (1, 25)],
-            #     # "expected_orbits": {(0,1,2,3): [9, 28]},
-            #     # "expected_mgs": {(0,1,2,3) : [(1, 2), (-1, 20), (1, 25)]},
-            #     "expected_projectors": {(0,1,2,3) : [(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)]}
-            # }, 
+            {
+                "B": [0b1011, 0b1100, 0b0111, 0b0000, 0b1110, 0b1001, 0b0010, 0b0101],
+                "n": 4,
+                "expected_family_of_valid_graphs": {
+                    0b0010: [(0, 5), (1, 4), (2, 7), (3, 6)],
+                    0b0101: [(0, 4), (1, 5), (2, 6), (3, 7)],
+                    0b0111: [(0, 1), (2, 3), (4, 5), (6, 7)],
+                    0b1001: [(0, 6), (1, 7), (2, 4), (3, 5)],
+                    0b1011: [(0, 3), (1, 2), (4, 7), (5, 6)],
+                    0b1100: [(0, 2), (1, 3), (4, 6), (5, 7)],
+                    0b1110: [(0, 7), (1, 6), (2, 5), (3, 4)],  
+                },
+                "expected_orbits": {(0,1,2,3,4,5,6,7): Orbit([14, 12, 11])},
+                "expected_Xs": [11, 14, 7],
+                "expected_mgs": {(0,1,2,3,4,5,6,7): [(1, 13)]},
+                "expected_projectors": {(0,1,2,3,4,5,6,7): [(1, 0), (1, 13)]} 
+            },
+            {
+                "B": [0b11000, 0b00100, 0b01101, 0b10001],
+                "n": 5,
+                "expected_family_of_valid_graphs": {
+                    0b11100: [(0, 1), (2, 3)],
+                    0b10101: [(0, 2), (1, 3)],
+                    0b01001: [(0, 3), (1, 2)],
+                },
+                "expected_orbits": {(0,1,2,3): Orbit(Xs=[9, 21])},
+                "expected_Xs": [9, 28],
+                "expected_mgs": {(0,1,2,3): [(1, 2), (-1, 20), (1, 25)]},
+                "expected_projectors": {(0,1,2,3) : [(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)]}
+            }, 
             {
                 "B": [0b1110, 0b1100, 0b1001, 0b0100, 0b0011],
                 "n": 4,
@@ -51,11 +60,11 @@ class TestLXMixer(unittest.TestCase):
                     0b1111: [(1, 4)]
                  },
                 "expected_orbits" : {
-                    (0, 2, 3, 4): Orbit([0b1101, 0b1010]),
-                    (0, 1) : Orbit([0b0010]),
-                    (1, 2) : Orbit([0b0101]),
-                    (1, 3) : Orbit([0b1000]),
-                    (1, 4) : Orbit([0b1111])
+                    (0, 2, 3, 4): Orbit(Xs= [0b1101, 0b1010]),
+                    (0, 1) : Orbit(Xs= [0b0010]),
+                    (1, 2) : Orbit(Xs= [0b0101]),
+                    (1, 3) : Orbit(Xs= [0b1000]),
+                    (1, 4) : Orbit(Xs= [0b1111])
                 },
                 "expected_Xs": [11, 14, 7],
                 "expected_mgs": {(0, 2, 3, 4): [(-1, 14), (1, 11)], (0, 1): [(-1, 8), (-1, 4), (1, 1)], (1, 2): [(-1, 8), (1, 2), (-1, 5)], (1, 3): [(-1, 4), (1, 2), (1, 1)], (1, 4): [(1, 12), (-1, 10), (-1, 9)]}, 
@@ -95,7 +104,6 @@ class TestLXMixer(unittest.TestCase):
                 lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
                 lx.orbits = case["expected_orbits"]
                 lx.compute_minimal_generating_sets()
-                # print("min_gen_sets: ", [orbit.Zs for orbit in lx.orbits.values()])
                 
                 for orbit_key, orbit in lx.orbits.items():
                     with self.subTest(orbit_key=orbit_key):
