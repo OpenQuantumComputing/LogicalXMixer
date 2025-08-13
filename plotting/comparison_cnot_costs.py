@@ -36,7 +36,7 @@ def load_module(alias_name, file_path):
 RUN_ORIGINAL_LXMIXER = True    
 RUN_LXMIXER_LARGEST_ORBIT = True        
 RUN_LXMIXER_ALL_SUBORBIT = True         
-RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = False  # DO NOT SET TO True, not implemented yet
+RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = True  # DO NOT SET TO True, not implemented yet
 
 # Helper variable for backward compatibility
 RUN_LXMIXER = RUN_LXMIXER_LARGEST_ORBIT or RUN_LXMIXER_ALL_SUBORBIT or RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT
@@ -738,12 +738,12 @@ def main(n, num_samples=100):
     
     # Update filename based on enabled mixers
     if RUN_ORIGINAL_LXMIXER and lxmixer_methods:
-        plt.savefig(f"comparison_n{n}_multi_methods.png")
+        plt.savefig(f"graphics/comparison_n{n}_multi_methods.pdf")
     elif RUN_ORIGINAL_LXMIXER:
-        plt.savefig(f"Original_LXMixer_only_n{n}.png")
+        plt.savefig(f"graphics/Original_LXMixer_only_n{n}.pdf")
     else:
         method_str = "_".join(lxmixer_methods)
-        plt.savefig(f"LXMixer_{method_str}_n{n}.png")
+        plt.savefig(f"LXMixer_{method_str}_n{n}.pdf")
     plt.clf()
 
     # Create separate timing plot
@@ -795,14 +795,14 @@ def main(n, num_samples=100):
     # Update title based on enabled mixers
     if RUN_ORIGINAL_LXMIXER and lxmixer_methods:
         ax.set_title(f"Execution Time Comparison: Original LXMixer vs Individual LXMixer Methods (n={n})")
-        timing_filename = f"timing_comparison_n{n}.png"
+        timing_filename = f"graphics/timing_comparison_n{n}.pdf"
     elif RUN_ORIGINAL_LXMIXER:
         ax.set_title(f"Original LXMixer Execution Time (n={n})")
-        timing_filename = f"timing_original_lxmixer_only_n{n}.png"
+        timing_filename = f"graphics/timing_original_lxmixer_only_n{n}.pdf"
     else:
         method_names = ", ".join([method.replace("_", " ").capitalize() for method in lxmixer_methods])
         ax.set_title(f"LXMixer Execution Time: {method_names} (n={n})")
-        timing_filename = f"timing_lxmixer_only_n{n}.png"
+        timing_filename = f"graphics/timing_lxmixer_only_n{n}.pdf"
     
     ax.grid()
     
