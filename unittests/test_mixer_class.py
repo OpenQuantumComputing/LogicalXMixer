@@ -32,7 +32,11 @@ class TestLXMixer(unittest.TestCase):
                 "expected_orbits": {(0,1,2,3,4,5,6,7): Orbit([14, 12, 11])},
                 "expected_mgs": {(0,1,2,3,4,5,6,7): [(1, 13)]},
                 "expected_projectors": {(0,1,2,3,4,5,6,7): [(1, 0), (1, 13)]},
-                "expected_costs": {(0,1,2,3,4,5,6,7): 18}
+                "expected_costs": {(0,1,2,3,4,5,6,7): 18},
+                "expected_combinations": [[(0, 1, 2, 3, 4, 5, 6, 7)]],
+                "expected_best_Xs": [[[14, 12, 11]]],
+                "expected_best_Zs": [[[(1, 0), (1, 13)]]],
+                "best_cost": 18
             },
             {
                 "B": [0b11000, 0b00100, 0b01101, 0b10001],
@@ -45,7 +49,11 @@ class TestLXMixer(unittest.TestCase):
                 "expected_orbits": {(0,1,2,3): Orbit(Xs=[9, 21])},
                 "expected_mgs": {(0,1,2,3): [(1, 2), (-1, 20), (1, 25)]},
                 "expected_projectors": {(0,1,2,3) : [(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)]},
-                "expected_costs": {(0,1,2,3): 88}
+                "expected_costs": {(0,1,2,3): 88},
+                "expected_combinations": [[(0, 1, 2, 3)]],
+                "expected_best_Xs": [[[9, 21]]],
+                "expected_best_Zs": [[[(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)]]],
+                "best_cost": 88
             }, 
             {
                 "B": [0b1110, 0b1100, 0b1001, 0b0100, 0b0011],
@@ -68,7 +76,12 @@ class TestLXMixer(unittest.TestCase):
                 },
                 "expected_mgs": {(0, 2, 3, 4): [(-1, 14), (1, 11)], (0, 1): [(-1, 8), (-1, 4), (1, 1)], (1, 2): [(-1, 8), (1, 2), (-1, 5)], (1, 3): [(-1, 4), (1, 2), (1, 1)], (1, 4): [(1, 12), (-1, 10), (-1, 9)]}, 
                 "expected_projectors": {(0,2,3,4): [(1, 0), (1, 11), (-1, 14), (-1, 5)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]},
-                "expected_costs": {(0,2,3,4): 36, (0,1): 24, (1,2): 32, (1,3): 24, (1,4): 48}
+                "expected_costs": {(0,2,3,4): 36, (0,1): 24, (1,2): 32, (1,3): 24, (1,4): 48},
+                "expected_combinations": [((0,2,3,4), (0,1)), ((0,2,3,4), (1,3))],  # One of the minimum cost orbits
+                "expected_best_Xs": [[[0b1101, 0b1010], [0b0010]], [[0b1101, 0b1010], [0b1000]]],
+                "expected_best_Zs": [[[(1, 0), (1, 11), (-1, 14), (-1, 5)], [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)]],
+                                      [[(1, 0), (1, 11), (-1, 14), (-1, 5)], [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)]]],
+                "best_cost": 60
             }
         ]
     
@@ -142,6 +155,27 @@ class TestLXMixer(unittest.TestCase):
                 for orbit_key, orbit in lx.orbits.items():
                     with self.subTest(orbit_key=orbit_key):
                         self.assertEqual(orbit.cost, case["expected_costs"][orbit_key])
+    
+    def test_find_best_mixer(self):
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.orbits = case["expected_orbits"]
+                
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        orbit.Zs = case["expected_projectors"][orbit_key]
+                        orbit.cost = case["expected_costs"][orbit_key]
+
+                lx.find_best_mixer()
+                
+                self.assertEqual(lx.best_cost, case["best_cost"])
+                self.assertEqual(lx.best_combinations, case["expected_combinations"])
+                self.assertEqual(lx.best_Xs, case["expected_best_Xs"])
+                self.assertEqual(lx.best_Zs, case["expected_best_Zs"])
+
 
 if __name__ == '__main__':
     unittest.main()
