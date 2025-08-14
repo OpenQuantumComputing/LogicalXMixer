@@ -8,11 +8,6 @@ from random import sample
 import time
 
 from pathlib import Path
-import urllib.request
-import tempfile
-import os
-import zipfile
-import shutil
 
 
 def load_module(alias_name, file_path):
@@ -36,7 +31,7 @@ def load_module(alias_name, file_path):
 RUN_ORIGINAL_LXMIXER = True    
 RUN_LXMIXER_LARGEST_ORBIT = True        
 RUN_LXMIXER_ALL_SUBORBIT = True         
-RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = True  # DO NOT SET TO True, not implemented yet
+RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = True  
 
 # Helper variable for backward compatibility
 RUN_LXMIXER = RUN_LXMIXER_LARGEST_ORBIT or RUN_LXMIXER_ALL_SUBORBIT or RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT
@@ -574,6 +569,63 @@ def main(n, num_samples=100):
             if any(np.isinf(val) for val in all_values):
                 print(f"  -> Infinity detected")
 
+    # Save raw data to .npy files before plotting
+    print("\nSaving raw data...")
+    
+    # Create data dictionary for saving
+    raw_data = {
+        'm_list': np.array(m_list),
+        'config': {
+            'RUN_ORIGINAL_LXMIXER': RUN_ORIGINAL_LXMIXER,
+            'lxmixer_methods': lxmixer_methods,
+            'n': n,
+            'num_samples': num_samples
+        }
+    }
+    
+    # Add Original LXMixer data if enabled
+    if RUN_ORIGINAL_LXMIXER:
+        raw_data['original_lxmixer'] = {
+            'min_cnots': min_cnots_original_lxmixer,
+            'max_cnots': max_cnots_original_lxmixer,
+            'mean_cnots': mean_cnots_original_lxmixer,
+            'var_cnots': var_cnots_original_lxmixer,
+            'min_times': min_times_original_lxmixer,
+            'max_times': max_times_original_lxmixer,
+            'mean_times': mean_times_original_lxmixer,
+            'var_times': var_times_original_lxmixer,
+            'original' : cnots_original_lxmixer
+        }
+    
+    # Add LXMixer data for each method
+    for method in lxmixer_methods:
+        raw_data[f'lxmixer_{method}'] = {
+            'min_cnots': min_cnots_lxmixer_methods[method],
+            'max_cnots': max_cnots_lxmixer_methods[method],
+            'mean_cnots': mean_cnots_lxmixer_methods[method],
+            'var_cnots': var_cnots_lxmixer_methods[method],
+            'min_times': min_times_lxmixer_methods[method],
+            'max_times': max_times_lxmixer_methods[method],
+            'mean_times': mean_times_lxmixer_methods[method],
+            'var_times': var_times_lxmixer_methods[method],
+            f'lxmixer_{method}': cnots_lxmixer_methods[method]
+        }
+    
+    # Add failed B sets information
+    raw_data['failed_B_sets'] = all_failed_B_sets
+    raw_data['infinity_B_sets'] = all_infinity_B_sets
+    
+    # Generate filename based on configuration
+    config_parts = []
+    if RUN_ORIGINAL_LXMIXER:
+        config_parts.append("original")
+    config_parts.extend(lxmixer_methods)
+    config_str = "_".join(config_parts) if config_parts else "none"
+    
+    raw_data_filename = f"../graphics/raw_data_n{n}_{config_str}.npy"
+    np.save(raw_data_filename, raw_data)
+    print(f"Raw data saved to: {raw_data_filename}")
+
     # Create comparison plot for CNOT costs and timing
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
@@ -738,12 +790,12 @@ def main(n, num_samples=100):
     
     # Update filename based on enabled mixers
     if RUN_ORIGINAL_LXMIXER and lxmixer_methods:
-        plt.savefig(f"graphics/comparison_n{n}_multi_methods.pdf")
+        plt.savefig(f"../graphics/comparison_n{n}_multi_methods.pdf")
     elif RUN_ORIGINAL_LXMIXER:
-        plt.savefig(f"graphics/Original_LXMixer_only_n{n}.pdf")
+        plt.savefig(f"../graphics/Original_LXMixer_only_n{n}.pdf")
     else:
         method_str = "_".join(lxmixer_methods)
-        plt.savefig(f"LXMixer_{method_str}_n{n}.pdf")
+        plt.savefig(f"../graphics/LXMixer_{method_str}_n{n}.pdf")
     plt.clf()
 
     # Create separate timing plot
@@ -795,14 +847,14 @@ def main(n, num_samples=100):
     # Update title based on enabled mixers
     if RUN_ORIGINAL_LXMIXER and lxmixer_methods:
         ax.set_title(f"Execution Time Comparison: Original LXMixer vs Individual LXMixer Methods (n={n})")
-        timing_filename = f"graphics/timing_comparison_n{n}.pdf"
+        timing_filename = f"../graphics/timing_comparison_n{n}.pdf"
     elif RUN_ORIGINAL_LXMIXER:
         ax.set_title(f"Original LXMixer Execution Time (n={n})")
-        timing_filename = f"graphics/timing_original_lxmixer_only_n{n}.pdf"
+        timing_filename = f"../graphics/timing_original_lxmixer_only_n{n}.pdf"
     else:
         method_names = ", ".join([method.replace("_", " ").capitalize() for method in lxmixer_methods])
         ax.set_title(f"LXMixer Execution Time: {method_names} (n={n})")
-        timing_filename = f"graphics/timing_lxmixer_only_n{n}.pdf"
+        timing_filename = f"../graphics/timing_lxmixer_only_n{n}.pdf"
     
     ax.grid()
     
@@ -886,11 +938,11 @@ if __name__ == "__main__":
     
     # How to use the configuration:
     # 
-    # Run selected mixers (default configuration above, set 
+    # Run selected mixers like this (beginning of the script):
     # RUN_ORIGINAL_LXMIXER = True/False
     # RUN_LXMIXER_LARGEST_ORBIT = True/False       
     # RUN_LXMIXER_ALL_SUBORBIT = True/False         
-    # RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = False (not implemented yet)
+    # RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = False 
     #
     #    for n in [3]:
     #        main(n)
