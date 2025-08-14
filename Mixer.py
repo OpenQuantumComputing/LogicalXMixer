@@ -20,7 +20,7 @@ class Suborbit:
         cost (int): Total cost (number of CNOTs required) of the suborbit.
     """
     Xs: List[int] = field(default_factory=list)
-    cost: int = float('inf')
+    cost: int = float("inf")
 
 @dataclass
 class Orbit:
@@ -35,7 +35,7 @@ class Orbit:
     """
     Xs: List[int] = field(default_factory=list)
     Zs: List[Tuple[int, int]] = field(default_factory=list)
-    cost: int = float('inf') # Total cost of the orbit, initialized to infinity.
+    cost: int = float("inf") # Total cost of the orbit, initialized to infinity.
     
     suborbits: Dict[Tuple[int,...], Suborbit] = field(default_factory=dict)
 
@@ -60,7 +60,7 @@ class LXMixer:
         
         best_Xs (List[List[List[int]]]): List(s) of lists of logical X operators that form the best mixers.
         best_Zs (List[List[List[Tuple[int, int]]]]): List(s) of lists of projectors (Z operators) that form the best mixers.
-        best_combinations (List[List[Tuple[int,...]]]): List(s) of tuples of node indices that form the best mixers.
+        best_combinations (List[Tuple[Tuple[int,...]]]): List(s) of tuples of node indices that form the best mixers.
         best_cost (int): The cost of the best mixer(s) found.
         
     Methods:
@@ -95,7 +95,7 @@ class LXMixer:
         self.best_Xs = []
         self.best_Zs = []
         self.best_combinations = []
-        self.best_cost: int = float('inf') # Set best cost to infinity initially.
+        self.best_cost: int = float("inf") # Set best cost to infinity initially.
 
     def setB(self, B, nL, sort:bool):
         """
@@ -225,7 +225,7 @@ class LXMixer:
                 G0_elements = [t[1] for t in G0]    #selects all of the elements of G that is a z-string (without +-1)
                 G0_signs = [t[0] for t in G0]       #selects the +-1 value
 
-                #is a string that checks if X and Z work on the same qubit for a x-string with all z-strings. Ex: 0100 means X and Z both work on qubit 2 
+                #is a string that checks if X and Z work on the same qubit for a x-string with all z-strings. Ex: 0100 means X and Z both work on qubit 2
                 commutation_string = [x_string & z_string for z_string in G0_elements]
 
                 #I_c and I_d are lists that will contain the indices of the commuting and anti-commuting stabilizers respectively
@@ -305,23 +305,6 @@ class LXMixer:
 
             # Updating the orbit dataclass instance so that we disregard the minimal generating sets and only keep the projectors for Zs
             orbit.Zs = projector  
-            
-    # def __group_suborbits(self):
-    #     """
-    #     Groups the suborbits in the orbits by their logical X operators, preserving the connectivity structure.
-    #     """
-    #     for orbit in self.orbits.values():
-    #         unconnected_suborbits = {}
-    #         for n in range(1, len(orbit.Xs)+1): # Iterate over the number of logical X operators in the orbit.
-    #             for X_combo in (combo for combo in combinations(orbit.Xs, n)):
-    #                 unconnected_nodes = []
-    #                 cost = float("inf")
-    #                 for subnodes, suborbit in orbit.suborbits.items():
-    #                     if set(suborbit.Xs) == set(X_combo):
-    #                         unconnected_nodes.append(subnodes)
-    #                         cost = suborbit.cost
-    #                     if len(unconnected_nodes) > 0: unconnected_suborbits[tuple(unconnected_nodes)] = Suborbit(Xs=list(X_combo), cost=cost)
-    #                 orbit.suborbits = unconnected_suborbits
     
     def __group_suborbits(self):
         """
@@ -330,16 +313,15 @@ class LXMixer:
         for orbit in self.orbits.values():
             grouped_suborbits = {}
             for n in range(1, len(orbit.Xs)+1):
-                for X_combo in combinations(orbit.Xs, n):
+                for X_combo in combinations(orbit.Xs, n): # Generate combinations of logical X operators from the main orbit.
                     matching_subnodes = [
                         subnodes for subnodes, suborbit in orbit.suborbits.items()
                         if set(suborbit.Xs) == set(X_combo)
-                    ]
+                    ] # Suborbit nodes that match the combination of logical X operators.
                     if matching_subnodes:
-                        # Use the minimum cost among matching suborbits
                         min_cost = min(
                             orbit.suborbits[subnodes].cost for subnodes in matching_subnodes
-                        )
+                        ) # These will actually be the same cost, but take minimum for consistency.
                         grouped_suborbits[tuple(matching_subnodes)] = Suborbit(Xs=list(X_combo), cost=min_cost)
             orbit.suborbits = grouped_suborbits
     
@@ -378,7 +360,7 @@ class LXMixer:
         best_main_combinations = [] # List to store the best main combinations of the largest orbits (if using semi-restricted suborbits).
         N = range(2, min([self.nB, len(self.orbits)+1])) # Range of the number of orbits to combine. Goes from 2 to |B|-1 (worst-case is a chain).
         for n in N:
-            for main_combination in tqdm(combinations(self.orbits.keys(), n), desc=f"Combo size {n}/{min([self.nB, len(self.orbits)+1])}"):
+            for main_combination in tqdm(combinations(self.orbits.keys(), n), desc=f"Combo size {n}/{min([self.nB-1, len(self.orbits)])}"):
                 if len({node for nodes in main_combination for node in nodes}) != self.nB: # If the combination does not cover all nodes in B, skip it.
                     continue
                 if not is_connected(main_combination): # If the combination doesn't connect all nodes or is unconnected, skip.
@@ -534,9 +516,9 @@ if __name__ == '__main__':
     print(f"\nFound {len(best_Xs)} best combinations of orbits with cost {best_cost}.")
     print(f"\nBest combinations: {best_combinations}")
     print("\nBest mixer:")
-    print(f"[{', '.join(f'[{", ".join(f"[{", ".join(f"{pauli_int_to_str(x, lxmixer.nL)}" for x in sub_Xs)}]" for sub_Xs in Xs)}]' for Xs in best_Xs)}]")
+    print(f"[{", ".join(f'[{", ".join(f"[{", ".join(f"{pauli_int_to_str(x, lxmixer.nL)}" for x in sub_Xs)}]" for sub_Xs in Xs)}]' for Xs in best_Xs)}]")
     print("\nBest projectors:")
-    print(f"[{', '.join(f'[{", ".join(f"[{", ".join(f'{"+" if z[0] > 0 else "-"}{pauli_int_to_str(z[1], lxmixer.nL, "Z")}' for z in sub_Zs)}]" for sub_Zs in Zs)}]' for Zs in best_Zs)}]")    
+    print(f"[{", ".join(f'[{", ".join(f"[{", ".join(f'{"+" if z[0] > 0 else "-"}{pauli_int_to_str(z[1], lxmixer.nL, "Z")}' for z in sub_Zs)}]" for sub_Zs in Zs)}]' for Zs in best_Zs)}]")    
    
     # """
     # """
