@@ -194,48 +194,87 @@ def find_best_cost(Xs, Zs_operators):
         
         all_costs[used_Xs] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
     
-    # Find the best combination of Xs that minimizes the cost
-    best_Xs = [] # List of tuples that has the combinations of the original Xs that generate the orbit, f.ex. [(2,), (8,), (2, 6)] (here 2, 8, and 6 are the original Xs)
-    best_cost = 0 # Total cost of the best combination of Xs
-    covered = set()
-    required = set(Xs)
-    maybe_later = []
+    # # Find the best combination of Xs that minimizes the cost
+    # best_Xs = [] # List of tuples that has the combinations of the original Xs that generate the orbit, f.ex. [(2,), (8,), (2, 6)] (here 2, 8, and 6 are the original Xs)
+    # best_temp_Xs = []
     
-    while len(best_Xs) < n:
-        # We start by selecting the lowest cost from all_costs as we want to minimize the cost
-        lowest_cost = min(all_costs.values())
-        keys = [k for k, v in all_costs.items() if v == lowest_cost]
+    # best_cost = 0 # Total cost of the best combination of Xs
+    # best_temp_cost = 0
+    # covered = set()
+    # required = set(Xs)
+    # maybe_later = []
+    # used_Xs = []
+
+    # lowest_cost = min(all_costs.values())
+
+
+    #the sorted keys, from highest to lowest cost
+    all_keys = sorted(all_costs.keys(), key=lambda k: all_costs[k], reverse=True)
+ 
+    
+    for i in range(len(all_keys)):
+        combinations = []
+        combinations.append(([], all_costs, [], 0))
         
-        # iterate through the keys with the lowest cost
-        for key in keys:
-            # Checks that either the key adds to the subset or that it is already covered (i.e. that we are actually creating an orbit)
-            if (not set(key).issubset(covered)) or (required == covered):  # If key has *any* uncovered elements
-                # Checks that if it is already covered, we use the lowest cost from maybe_later
-                if required == covered:
-                    new_key_and_cost = maybe_later.pop(0) if maybe_later else [key, lowest_cost]
-                    best_Xs.append(new_key_and_cost[0])
-                    best_cost += new_key_and_cost[1]
-                
-                # if the required set is not covered, we add the key to the best_Xs and update the covered set
-                else:
-                    covered.update(key)
-                    best_Xs.append(key)
-                    best_cost += lowest_cost
-                
-                # If we have enough Xs to cover the orbit, we break the loop
-                if len(best_Xs) == n:
-                    break
-                # We delete the key from all_costs as we have used it
-                del all_costs[key]
+        while combinations:
+            #pops the Xs with the lowest cost first
+            best_Xs, available_keys, unavailable_keys, total_cost = combinations.pop()
+            best_key = available_keys.pop()
             
-            # If the key does not add to the subset, we store it in maybe_later for later use (if we get a covered set and need to add more Xs)
-            else:
-                # We delete the key from all_costs as it does not add to the subset
-                del all_costs[key]  
-                maybe_later.append([key, lowest_cost])
+            if best_key in unavailable_keys:
+                continue
+            
+            best_Xs.append(best_key)
+            adding_key = set(best_key)
+            new_unavailable_keys = [tuple(sorted(set().union(*combo, adding_key))) for r in range(1, len(unavailable_keys) + 1) for combo in combinations(unavailable_keys, r)]
+            unavailable_keys.extend(new_unavailable_keys)
+            
+            total_cost += all_costs[best_key]
+            if total_cost > best_cost:
+                break
+            
+            if len(best_Xs) == n:  
+                best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
+                best_cost = total_cost
+                break
+        
+        
+
+    # while len(best_Xs) < n:
+    #     # We start by selecting the lowest cost from all_costs as we want to minimize the cost
+    #     lowest_cost = min(all_costs.values())
+    #     keys = [k for k, v in all_costs.items() if v == lowest_cost]
+        
+    #     # iterate through the keys with the lowest cost
+    #     for key in keys:
+    #         # Checks that either the key adds to the subset or that it is already covered (i.e. that we are actually creating an orbit)
+    #         if (not set(key).issubset(covered)) or (required == covered):  # If key has *any* uncovered elements
+    #             # Checks that if it is already covered, we use the lowest cost from maybe_later
+    #             if required == covered:
+    #                 new_key_and_cost = maybe_later.pop(0) if maybe_later else [key, lowest_cost]
+    #                 best_Xs.append(new_key_and_cost[0])
+    #                 best_cost += new_key_and_cost[1]
                 
-    # The best_Xs are reduced by applying XOR to the tuples to get the string for the combination of the original Xs
-    best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
+    #             # if the required set is not covered, we add the key to the best_Xs and update the covered set
+    #             else:
+    #                 covered.update(key)
+    #                 best_Xs.append(key)
+    #                 best_cost += lowest_cost
+                
+    #             # If we have enough Xs to cover the orbit, we break the loop
+    #             if len(best_Xs) == n:
+    #                 break
+    #             # We delete the key from all_costs as we have used it
+    #             del all_costs[key]
+            
+    #         # If the key does not add to the subset, we store it in maybe_later for later use (if we get a covered set and need to add more Xs)
+    #         else:
+    #             # We delete the key from all_costs as it does not add to the subset
+    #             del all_costs[key]  
+    #             maybe_later.append([key, lowest_cost])
+                
+    # # The best_Xs are reduced by applying XOR to the tuples to get the string for the combination of the original Xs
+    # best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
 
     return best_Xs_reduced, best_cost
 
