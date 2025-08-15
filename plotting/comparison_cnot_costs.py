@@ -28,10 +28,10 @@ def load_module(alias_name, file_path):
 
 # CONFIGURATION: Choose which mixers to run
 # Set to True to run that mixer, False to skip it
-RUN_ORIGINAL_LXMIXER = True    
+RUN_ORIGINAL_LXMIXER = False    
 RUN_LXMIXER_LARGEST_ORBIT = True        
-RUN_LXMIXER_ALL_SUBORBIT = True         
-RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = True  
+RUN_LXMIXER_ALL_SUBORBIT = False         
+RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = False  
 
 # Helper variable for backward compatibility
 RUN_LXMIXER = RUN_LXMIXER_LARGEST_ORBIT or RUN_LXMIXER_ALL_SUBORBIT or RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT
@@ -621,8 +621,11 @@ def main(n, num_samples=100):
         config_parts.append("original")
     config_parts.extend(lxmixer_methods)
     config_str = "_".join(config_parts) if config_parts else "none"
-    
-    raw_data_filename = f"../graphics/raw_data_n{n}_{config_str}.npy"
+
+    # Save inside LogicalXMixer/graphics directory (repo)
+    graphics_dir = Path(__file__).resolve().parent.parent / "graphics"
+    graphics_dir.mkdir(parents=True, exist_ok=True)
+    raw_data_filename = graphics_dir / f"raw_data_n{n}_{config_str}.npy"
     np.save(raw_data_filename, raw_data)
     print(f"Raw data saved to: {raw_data_filename}")
 
@@ -790,12 +793,12 @@ def main(n, num_samples=100):
     
     # Update filename based on enabled mixers
     if RUN_ORIGINAL_LXMIXER and lxmixer_methods:
-        plt.savefig(f"../graphics/comparison_n{n}_multi_methods.pdf")
+        plt.savefig(graphics_dir / f"comparison_n{n}_multi_methods.pdf")
     elif RUN_ORIGINAL_LXMIXER:
-        plt.savefig(f"../graphics/Original_LXMixer_only_n{n}.pdf")
+        plt.savefig(graphics_dir / f"Original_LXMixer_only_n{n}.pdf")
     else:
         method_str = "_".join(lxmixer_methods)
-        plt.savefig(f"../graphics/LXMixer_{method_str}_n{n}.pdf")
+    plt.savefig(graphics_dir / f"LXMixer_{method_str}_n{n}.pdf")
     plt.clf()
 
     # Create separate timing plot
@@ -847,14 +850,14 @@ def main(n, num_samples=100):
     # Update title based on enabled mixers
     if RUN_ORIGINAL_LXMIXER and lxmixer_methods:
         ax.set_title(f"Execution Time Comparison: Original LXMixer vs Individual LXMixer Methods (n={n})")
-        timing_filename = f"../graphics/timing_comparison_n{n}.pdf"
+        timing_filename = graphics_dir / f"timing_comparison_n{n}.pdf"
     elif RUN_ORIGINAL_LXMIXER:
         ax.set_title(f"Original LXMixer Execution Time (n={n})")
-        timing_filename = f"../graphics/timing_original_lxmixer_only_n{n}.pdf"
+        timing_filename = graphics_dir / f"timing_original_lxmixer_only_n{n}.pdf"
     else:
         method_names = ", ".join([method.replace("_", " ").capitalize() for method in lxmixer_methods])
         ax.set_title(f"LXMixer Execution Time: {method_names} (n={n})")
-        timing_filename = f"../graphics/timing_lxmixer_only_n{n}.pdf"
+        timing_filename = graphics_dir / f"timing_lxmixer_only_n{n}.pdf"
     
     ax.grid()
     
