@@ -10,6 +10,12 @@ from functools import reduce
 from utils import is_connected, is_power_of_two, find_best_cost, pauli_int_to_str, parity
 from plotting.plot_mixers import Plotter
 
+NEW_CODE = True
+OLD_CODE = False
+
+# NEW_CODE = False
+# OLD_CODE = True
+
 @dataclass
 class Suborbit:
     """
@@ -357,58 +363,56 @@ class LXMixer:
             self.best_combinations = [[B_orbit]]
             return
         
-        best_main_combinations = [] # List to store the best main combinations of the largest orbits (if using semi-restricted suborbits).
-        N = range(2, min([self.nB, len(self.orbits)+1])) # Range of the number of orbits to combine. Goes from 2 to |B|-1 (worst-case is a chain).
-        for n in N:
-            for main_combination in tqdm(combinations(self.orbits.keys(), n), desc=f"Combo size {n}/{min([self.nB-1, len(self.orbits)])}"):
-                if len({node for nodes in main_combination for node in nodes}) != self.nB: # If the combination does not cover all nodes in B, skip it.
-                    continue
-                if not is_connected(main_combination): # If the combination doesn't connect all nodes or is unconnected, skip.
-                    continue
-                if self.method == "semi_restricted_suborbits":
-                    for combination in product(*[self.orbits[main_nodes].suborbits.keys() for main_nodes in main_combination]):
-                        if len({node for group in combination for nodes in group for node in nodes}) != self.nB: # If the combination does not cover all nodes in B, skip it.
-                            continue
-                        if not is_connected(tuple(nodes for group in combination for nodes in group)):
-                            continue
-                        cost = 0
-                        for main_nodes, sub_nodes in zip(main_combination, combination):
-                            cost += self.orbits[main_nodes].suborbits[sub_nodes].cost
-                            if cost > self.best_cost: # If the cost at any point exceeds the best cost, go to the next combination.
-                                break
-                        if cost < self.best_cost: # If the cost is strictly lower that the best cost, update the best cost and combination.
-                            self.best_cost = cost
-                            best_main_combinations = [main_combination]
-                            self.best_combinations = [combination]
-                        elif cost == self.best_cost: # If the cost is equal to the best cost, add the combination to the list of best combinations.
-                            best_main_combinations.append(main_combination)
-                            self.best_combinations.append(combination)
-                            
-                else: # If we are not using semi-restricted suborbits, we can just use the orbits directly.
-                    cost = 0
-                    for orbit_nodes in main_combination:
-                        cost += self.orbits[orbit_nodes].cost # Add the cost each orbit in the combination.
-                        if cost > self.best_cost: # If the cost at any point exceeds the best cost, go to the next combination.
-                            break
-                    if cost < self.best_cost: # If the cost is strictly lower that the best cost, update the best cost and combination.
-                        self.best_cost = cost
-                        self.best_combinations = [main_combination]
-                    elif cost == self.best_cost: # If the cost is equal to the best cost, add the combination to the list of best combinations.
-                        self.best_combinations.append(main_combination)
-        
-        # Add the corresponding X operators and projectors to the best combination(s).
         if self.method == "semi_restricted_suborbits":
-            self.best_Xs = [
-                [self.orbits[main_nodes].suborbits[sub_nodes].Xs for main_nodes, sub_nodes in zip(main_comb, sub_comb)]
-                for main_comb, sub_comb in zip(best_main_combinations, self.best_combinations)
-            ]
-            self.best_Zs = [
-                [self.orbits[main_nodes].Zs for main_nodes in main_comb]
-                for main_comb in best_main_combinations
-            ]
-        else:
-            self.best_Xs = [[self.orbits[orbit_nodes].Xs for orbit_nodes in combination] for combination in self.best_combinations]
-            self.best_Zs = [[self.orbits[orbit_nodes].Zs for orbit_nodes in combination] for combination in self.best_combinations]
+            raise NotImplementedError("Semi-restricted suborbits method is not implemented efficiently for finding the best mixer.")
+        
+        orbit_keys = sorted(self.orbits.keys(), key=lambda x: self.orbits[x].cost) # Sort orbits by their cost.
+        stack = [((), 0, 0)] # Initialize the stack with an empty combination, starting index and current cost.
+        
+        pbar = tqdm(total=None, desc="DFS search") # Progress bar for the depth-first search.
+        while stack:
+            pbar.update(1)
+            
+            current_combination, start_index, current_cost = stack.pop() # Backtracking step. Retrieve the last combination, starting index and current cost.
+            
+            if current_cost >= self.best_cost: # If the current cost exceeds the best cost found so far, skip this combination.
+                continue
+            
+            covered_nodes = {node for nodes in current_combination for node in nodes}
+            
+            if len(covered_nodes) == self.nB:
+                if current_cost < self.best_cost:
+                    self.best_cost = current_cost
+                    # print(f"New best cost: {self.best_cost} for combination {current_combination}")
+                    self.best_combinations = [current_combination]
+                elif current_cost == self.best_cost:
+                    self.best_combinations.append(current_combination)
+                continue
+            
+            # If the number of orbits in the combination has reached |B|-1 (chain, worst-case), no more orbits should be needed.
+            if len(current_combination) >= self.nB - 1:
+                continue
+        
+            # Iterate over the remaining orbits starting from the start_index.
+            for i in range(start_index, len(orbit_keys)):
+                nodes = orbit_keys[i]
+                # If the last element in the current combination is disjoint from the added nodes, or if the added nodes are a subset
+                # of the covered nodes, skip this combination.
+                if current_combination and set(nodes).isdisjoint(current_combination[-1]) or set(nodes).issubset(covered_nodes):
+                    continue
+                new_cost = current_cost + self.orbits[nodes].cost # Update cost.
+                new_combination = current_combination + (nodes,) # New combination with the added nodes.
+                stack.append((new_combination, i + 1, new_cost)) # Add the new combination to the stack.
+
+        self.best_Xs = [
+            [self.orbits[orbit_nodes].Xs for orbit_nodes in combination]
+            for combination in self.best_combinations
+        ]
+        self.best_Zs = [
+            [self.orbits[orbit_nodes].Zs for orbit_nodes in combination]
+            for combination in self.best_combinations
+        ]
+        pbar.close()
         return
         
 # Standalone code, e.g. example usage and testing.
@@ -424,27 +428,27 @@ if __name__ == '__main__':
     # nL = 4
     # B = [0b1110, 0b1100, 0b1001, 0b0100, 0b0011] # nB = 5, example from the article
     # B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100] # nB = 6
-    B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100, 0b0010] # nB = 7
+    # B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100, 0b0010] # nB = 7
     # B = [0b0000, 0b1111, 0b0001, 0b1101, 0b1110, 0b1100, 0b0010, 0b0011] # nB = 8, 8-orbit
     # B = [0b1110, 0b1100, 0b1001, 0b0100, 0b0011, 0b0000, 0b1111, 0b1011, 
     #      0b1101, 0b0110, 0b0010, 0b0101, 0b1000, 0b0001, 0b0111] # nB = 15
     # nL = 5
     # B = [0b10011, 0b01100, 0b11000, 0b00011,
     #     0b01001, 0b10100, 0b00110, 0b01110] # nB = 8
-    # B = [0b00001, 0b00010, 0b00100,
-    #     0b01000, 0b10000, 0b00011,
-    #     0b00101, 0b00110, 0b01001,
-    #     0b01010, 0b01100, 0b10001, 
-    #     0b10010, 0b10100, 0b11000] # nB = 15
+    B = [0b00001, 0b00010, 0b00100,
+        0b01000, 0b10000, 0b00011,
+        0b00101, 0b00110, 0b01001,
+        0b01010, 0b01100, 0b10001, 
+        0b10010, 0b10100, 0b11000] # nB = 15
     
     print(f"\nB = [{" ,".join(f"|{b:0{len(bin(max(B)))-2}b}>" for b in B)}]") # Print B in binary format.
     
     # Initialize the LXMixer with the feasible set B and number of logical qubits nL.
     # lxmixer = LXMixer(B, 3)
-    lxmixer = LXMixer(B, 4, method="semi_restricted_suborbits")
+    # lxmixer = LXMixer(B, 4, method="semi_restricted_suborbits")
     # lxmixer = LXMixer(B, 4, method="largest_orbits")
     # lxmixer = LXMixer(B, 4, method="all_suborbits")
-    # lxmixer = LXMixer(B, 5)
+    lxmixer = LXMixer(B, 5)
 
     print("\nComputing family of valid graphs...")
     start_time = time.time()
