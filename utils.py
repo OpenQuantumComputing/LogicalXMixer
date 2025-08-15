@@ -206,37 +206,54 @@ def find_best_cost(Xs, Zs_operators):
     # used_Xs = []
 
     # lowest_cost = min(all_costs.values())
-
-
+    best_Xs_reduced = []  
+    best_cost = float('inf')  
+    
     #the sorted keys, from highest to lowest cost
     all_keys = sorted(all_costs.keys(), key=lambda k: all_costs[k], reverse=True)
- 
+    unavailable_combos = []
     
     for i in range(len(all_keys)):
-        combinations = []
-        combinations.append(([], all_costs, [], 0))
+        combos = []
+        key_copy = all_keys.copy()  
+        combos.append(([], key_copy, [], 0))
+        print("We go into this loop with all_keys:", key_copy)
         
-        while combinations:
+        while combos:
             #pops the Xs with the lowest cost first
-            best_Xs, available_keys, unavailable_keys, total_cost = combinations.pop()
+            best_Xs, available_keys, unavailable_keys, total_cost = combos.pop()
             best_key = available_keys.pop()
-            
-            if best_key in unavailable_keys:
-                continue
-            
             best_Xs.append(best_key)
-            adding_key = set(best_key)
-            new_unavailable_keys = [tuple(sorted(set().union(*combo, adding_key))) for r in range(1, len(unavailable_keys) + 1) for combo in combinations(unavailable_keys, r)]
-            unavailable_keys.extend(new_unavailable_keys)
-            
+
+            print("Best key:", best_key, "available_keys:", available_keys, "best_Xs:", best_Xs, "unavailable_keys:", unavailable_keys)
+            unavailable_keys.append(best_key)  
             total_cost += all_costs[best_key]
-            if total_cost > best_cost:
-                break
             
-            if len(best_Xs) == n:  
-                best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
-                best_cost = total_cost
-                break
+            for key in reversed(available_keys):
+                if key in unavailable_keys:
+                    print("THIS IF-STATEMENT TRIGGERED")
+                    continue
+                
+                best_Xs.append(key)
+                print("Best Xs after appending best_key and key:", best_Xs)
+                adding_key = set(key)
+                new_unavailable_keys = [tuple(sorted(set().union(*combo, adding_key))) for r in range(1, len(unavailable_keys) + 1) for combo in combinations(unavailable_keys, r)]
+                unavailable_keys.extend(new_unavailable_keys)
+                
+                total_cost += all_costs[key]
+                
+                if total_cost > best_cost:
+                    break
+                
+                if len(best_Xs) == n:  
+                    best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
+                    best_cost = total_cost
+                    unavailable_combos.append(best_Xs)
+                    print("Best Xs reduced:", best_Xs_reduced, "Total cost:", best_cost)
+
+                    key_copy = all_keys.copy()  
+                    combos.append((best_Xs, available_keys, unavailable_keys, total_cost))
+                    break
         
         
 
