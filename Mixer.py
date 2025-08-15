@@ -375,7 +375,7 @@ class LXMixer:
             
             current_combination, start_index, current_cost = stack.pop() # Backtracking step. Retrieve the last combination, starting index and current cost.
             
-            if current_cost >= self.best_cost: # If the current cost exceeds the best cost found so far, skip this combination.
+            if current_cost > self.best_cost: # If the current cost exceeds the best cost found so far, skip this combination.
                 continue
             
             covered_nodes = {node for nodes in current_combination for node in nodes}
