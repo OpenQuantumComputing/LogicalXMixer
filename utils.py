@@ -194,6 +194,11 @@ def find_best_cost(Xs, Zs_operators):
         
         all_costs[used_Xs] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
     
+    if n == 1:
+        best_Xs_reduced = all_x_operators[0][1]  
+        best_cost = all_costs[all_x_operators[0][0]]
+        return best_Xs_reduced, best_cost
+        print("All costs are: ", all_costs)
 
     best_Xs_reduced = []  
     best_cost = float('inf')  
@@ -219,7 +224,8 @@ def find_best_cost(Xs, Zs_operators):
             
             processed_keys.add(best_key)  
             # print("Best key:", best_key, "available_keys:", available_keys, "best_Xs:", best_Xs, "unavailable_keys:", unavailable_keys)
-            unavailable_keys.append(best_key)  
+            unavailable_keys.append(best_key) 
+            total_cost = 0 
             total_cost += all_costs[best_key]
             
             for key in reversed(available_keys):
@@ -248,6 +254,7 @@ def find_best_cost(Xs, Zs_operators):
                 if total_cost > best_cost:
                     print("This resulted in a cost that is higher than the best cost, so we break", "total_cost:", total_cost, "best_cost:", best_cost)
                     best_Xs.pop()
+                    total_cost -= all_costs[key]
                     continue
                 
                 if len(best_Xs) == n:  
@@ -304,8 +311,10 @@ def find_best_cost(Xs, Zs_operators):
     return best_Xs_reduced, best_cost
 
 if __name__ == '__main__':
-    results = find_best_cost([0b0010, 0b0110, 0b1000], [(1, 0b0010), (1, 0b0110), (1, 0b1000), (1, 0b1010), (1, 0b1100), (1, 0b1110)])
-
+    # results = find_best_cost([0b0010, 0b0110, 0b1000], [(1, 0b0010), (1, 0b0110), (1, 0b1000), (1, 0b1010), (1, 0b1100), (1, 0b1110)])
+    # results = find_best_cost([9, 21], [(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)])
+    # results = find_best_cost([0b1101, 0b1010], [(1, 0), (1, 11), (-1, 14), (-1, 5)])
+    results = find_best_cost([0b0010], [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)])
     print("Best combo of Xs (heuristic):", results[0],"\nBest cost (heuristic):", results[1])#, "\nBest combo of Xs (exact):", results[2], "\nBest cost (exact):", results[3])
     #print("Best combco of Xs reduced (heuristic):", results[1])
     
