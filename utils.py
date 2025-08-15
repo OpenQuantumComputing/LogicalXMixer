@@ -87,42 +87,6 @@ def convert_to_binary_string(int_values, n):
     else:
         raise TypeError("Input must be int, list, or dict of ints")
 
-# def is_connected(orbits):
-#     """
-#     Check if the list of orbits forms a connected structure.
-#     Connectivity means you can move from any orbit to any other via overlapping nodes.  
-
-#     Args:
-#         orbits (List[Tuple[int, ...]]): Node indices representing the group generated sets.
-
-#     Returns:
-#         bool: True if the orbits are connected, False otherwise.
-#     """
-#     if len(orbits) <= 1:
-#         return True
-
-#     # Convert orbits to sets for quick intersection
-#     orbit_sets = [set(o) for o in orbits]
-
-#     # Build adjacency list: two orbits connected if their sets overlap
-#     adjacency = {i: set() for i in range(len(orbit_sets))}
-#     for i in range(len(orbit_sets)):
-#         for j in range(i + 1, len(orbit_sets)):
-#             if orbit_sets[i].intersection(orbit_sets[j]):
-#                 adjacency[i].add(j)
-#                 adjacency[j].add(i)
-
-#     visited = set()
-#     stack = [0]  # start from first orbit
-
-#     while stack:
-#         node = stack.pop()
-#         if node not in visited:
-#             visited.add(node)
-#             stack.extend(adjacency[node] - visited)
-
-#     return len(visited) == len(orbit_sets)
-
 def is_connected(orbits):
     """
     Check if the list of orbits forms a connected structure.
@@ -156,7 +120,6 @@ def is_connected(orbits):
                 stack.append(j)
 
     return False
-
 
 def find_best_cost(Xs, Zs_operators):
     """

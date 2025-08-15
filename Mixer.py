@@ -7,14 +7,8 @@ from tqdm import tqdm
 import numpy as np
 from functools import reduce
 
-from utils import is_connected, is_power_of_two, find_best_cost, pauli_int_to_str, parity
+from utils import is_power_of_two, find_best_cost, pauli_int_to_str, parity
 from plotting.plot_mixers import Plotter
-
-NEW_CODE = True
-OLD_CODE = False
-
-# NEW_CODE = False
-# OLD_CODE = True
 
 @dataclass
 class Suborbit:
