@@ -198,7 +198,6 @@ def find_best_cost(Xs, Zs_operators):
         best_Xs_reduced = all_x_operators[0][1]  
         best_cost = all_costs[all_x_operators[0][0]]
         return best_Xs_reduced, best_cost
-        print("All costs are: ", all_costs)
 
     best_Xs_reduced = []  
     best_cost = float('inf')  
