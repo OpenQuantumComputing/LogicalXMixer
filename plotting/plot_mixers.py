@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.path import Path
 import numpy as np
-import sys
-sys.path.append('../')
 from utils import pauli_int_to_str
 import math
 
@@ -37,7 +35,7 @@ class Plotter:
             y = self.LX.nB - i # y-coordinate is inverted to match the plot's y-axis direction.
             ax.plot(self.x0, y, "o", markersize=16, color="white") # Draw the node as a white circle.
             ax.text(self.x0, y, fr"$|${self.LX.B[i]:0{self.LX.nL}b}$\rangle$", 
-                    fontsize=FONTSIZE, verticalalignment="center", horizontalalignment="center", color="black")
+                    fontsize=self.fontsize, verticalalignment="center", horizontalalignment="center", color="black")
             ax.set_xlim(-1, 1)
             ax.axis("off")  # Hide the axes for a cleaner look.
         
@@ -88,7 +86,7 @@ class Plotter:
                 side = 0
                 for neighbor in nodes:
                     side += 1
-                    if node < neighbor and (node, neighbor) in self.LX.family_of_valid_graphs[X]:
+                    if (node, neighbor) in self.LX.family_of_valid_graphs[X]:
                         if side%2 == 0:
                             y0 = self.LX.nB - node
                             y1 = self.LX.nB - neighbor
@@ -135,7 +133,7 @@ class Plotter:
         orbit_labels = [] # Labels for the legend.
         for color_n, nodes in enumerate(combination):
             orbit_labels.append(fr"$\langle${", ".join(f"${pauli_int_to_str(X, self.LX.nL)}$"for X in Xs[color_n])}$\rangle$") # Orbit label <X_1, ..., X_l>.
-            self.draw_orbit(ax, nodes, Xs[color_n], colors[color_n], r+color_n*0.005, lw) # Draw the orbit with the corresponding color.
+            self.draw_orbit(ax, nodes, Xs[color_n], colors[color_n], r+color_n*0.02, lw) # Draw the orbit with the corresponding color.
                         
         handles = [plt.Line2D([0], [0],
                         linestyle="-",
@@ -145,20 +143,31 @@ class Plotter:
             for color, label in zip(colors, orbit_labels)]
         ax.legend(
             handles=handles,
-            fontsize=FONTSIZE,
-            title_fontsize=FONTSIZE,
+            fontsize=self.fontsize,
+            title_fontsize=self.fontsize,
             loc="lower center",
             bbox_to_anchor=(0.5, 1.02),  # Center above the plot in axes coords.
             bbox_transform=ax.transAxes,  # Use axes coords, not data coords.
             frameon=False
         )
     
-    def draw_best_graphs(self, x=X0, r=0.3, lw=1, cmap="tab20", saveas=None):
+    def draw_best_graphs(self, r=0.3, lw=1, cmap="tab20", saveas=None):
+        """
+        Draws the best mixer graph(s) found by the LXMixer.
+
+        Args:
+            r (float, optional): Arc radius. Defaults to 0.3.
+            lw (int, optional): Lineqidth. Defaults to 1.
+            cmap (str, optional): Matplotlib colormap name. Defaults to "tab20".
+            saveas (str, optional): Filepath. Defaults to None.
+        """
         N_plots = len(self.LX.best_combinations)
         fig, ax = plt.subplots(1, N_plots, figsize=(int(math.log2(self.LX.nB))*N_plots, self.LX.nB))
         if not isinstance(ax, (list, np.ndarray)):  # Ensure ax is iterable, even if there's only one subplot/best solution.
             ax = [ax]
         for plot_n, combination in enumerate(self.LX.best_combinations):
+            if self.LX.method == "semi_restricted_suborbits" and not isinstance(combination[0][0], int):
+                combination = tuple(tuple(node for edge in combo for node in edge) for combo in combination)
             self.draw_mixer_graph(ax[plot_n], combination, self.LX.best_Xs[plot_n], r=r, lw=lw, cmap=cmap) # Draw the mixer graph for each best combination.
 
         plt.tight_layout()
@@ -216,8 +225,8 @@ class Plotter:
                     else:
                         y0 = self.LX.nB - edge[1]
                         y1 = self.LX.nB - edge[0]
-                    start = (X0, y0)
-                    end = (X0, y1)
+                    start = (self.x0, y0)
+                    end = (self.x0, y1)
                     self.draw_arc(ax[plot_n], start, end, color=colors[X_color], r=r, lw=lw)
                 X_color += 1
             
@@ -230,8 +239,8 @@ class Plotter:
                 for color, label in zip(group_colors, group_labels)]
             ax[plot_n].legend(
                 handles=handles,
-                fontsize=FONTSIZE,
-                title_fontsize=FONTSIZE,
+                fontsize=self.fontsize,
+                title_fontsize=self.fontsize,
                 loc="lower center",
                 bbox_to_anchor=(0.5, 1.02),  # Center above the plot in axes coords
                 bbox_transform=ax[plot_n].transAxes,  # Use the specific Axes object

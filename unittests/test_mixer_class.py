@@ -1,58 +1,181 @@
 import unittest
-from Mixer import LXMixer
+import copy
+from pathlib import Path
+import sys
+
+# Current file's directory
+current_dir = Path(__file__).resolve().parent
+
+# Go up one level
+parent_dir = current_dir.parent
+
+# Add to sys.path
+sys.path.append(str(parent_dir))
+
+from Mixer import LXMixer, Orbit
 
 class TestLXMixer(unittest.TestCase):
+    def setUp(self):
+        self.test_cases = [
+            {
+                "B": [0b1011, 0b1100, 0b0111, 0b0000, 0b1110, 0b1001, 0b0010, 0b0101],
+                "n": 4,
+                "expected_family_of_valid_graphs": {
+                    0b0010: [(0, 5), (1, 4), (2, 7), (3, 6)],
+                    0b0101: [(0, 4), (1, 5), (2, 6), (3, 7)],
+                    0b0111: [(0, 1), (2, 3), (4, 5), (6, 7)],
+                    0b1001: [(0, 6), (1, 7), (2, 4), (3, 5)],
+                    0b1011: [(0, 3), (1, 2), (4, 7), (5, 6)],
+                    0b1100: [(0, 2), (1, 3), (4, 6), (5, 7)],
+                    0b1110: [(0, 7), (1, 6), (2, 5), (3, 4)],  
+                },
+                "expected_orbits": {(0,1,2,3,4,5,6,7): Orbit([14, 12, 11])},
+                "expected_mgs": {(0,1,2,3,4,5,6,7): [(1, 13)]},
+                "expected_projectors": {(0,1,2,3,4,5,6,7): [(1, 0), (1, 13)]},
+                "expected_costs": {(0,1,2,3,4,5,6,7): 18},
+                "expected_combinations": [[(0, 1, 2, 3, 4, 5, 6, 7)]],
+                "expected_best_Xs": [[[14, 12, 11]]],
+                "expected_best_Zs": [[[(1, 0), (1, 13)]]],
+                "best_cost": 18
+            },
+            {
+                "B": [0b11000, 0b00100, 0b01101, 0b10001],
+                "n": 5,
+                "expected_family_of_valid_graphs": {
+                    0b11100: [(0, 1), (2, 3)],
+                    0b10101: [(0, 2), (1, 3)],
+                    0b01001: [(0, 3), (1, 2)],
+                },
+                "expected_orbits": {(0,1,2,3): Orbit(Xs=[9, 21])},
+                "expected_mgs": {(0,1,2,3): [(1, 2), (-1, 20), (1, 25)]},
+                "expected_projectors": {(0,1,2,3) : [(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)]},
+                "expected_costs": {(0,1,2,3): 88},
+                "expected_combinations": [[(0, 1, 2, 3)]],
+                "expected_best_Xs": [[[9, 21]]],
+                "expected_best_Zs": [[[(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)]]],
+                "best_cost": 88
+            }, 
+            {
+                "B": [0b1110, 0b1100, 0b1001, 0b0100, 0b0011],
+                "n": 4,
+                "expected_family_of_valid_graphs": {
+                    0b0010: [(0, 1)],
+                    0b0101: [(1, 2)],
+                    0b0111: [(0, 2), (3, 4)],
+                    0b1000: [(1, 3)],
+                    0b1010: [(0, 3), (2, 4)],
+                    0b1101: [(0, 4), (2, 3)],
+                    0b1111: [(1, 4)]
+                 },
+                "expected_orbits" : {
+                    (0, 2, 3, 4): Orbit(Xs= [0b1101, 0b1010]),
+                    (0, 1) : Orbit(Xs= [0b0010]),
+                    (1, 2) : Orbit(Xs= [0b0101]),
+                    (1, 3) : Orbit(Xs= [0b1000]),
+                    (1, 4) : Orbit(Xs= [0b1111])
+                },
+                "expected_mgs": {(0, 2, 3, 4): [(-1, 14), (1, 11)], (0, 1): [(-1, 8), (-1, 4), (1, 1)], (1, 2): [(-1, 8), (1, 2), (-1, 5)], (1, 3): [(-1, 4), (1, 2), (1, 1)], (1, 4): [(1, 12), (-1, 10), (-1, 9)]}, 
+                "expected_projectors": {(0,2,3,4): [(1, 0), (1, 11), (-1, 14), (-1, 5)], (0,1): [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)], (1,2): [(1, 0), (-1, 5), (1, 2), (-1, 7), (-1, 8), (1, 13), (-1, 10), (1, 15)], (1,3): [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)], (1,4): [(1, 0), (-1, 9), (-1, 10), (1, 3), (1, 12), (-1, 5), (-1, 6), (1, 15)]},
+                "expected_costs": {(0,2,3,4): 36, (0,1): 24, (1,2): 32, (1,3): 24, (1,4): 48},
+                "expected_combinations": [((0,2,3,4), (0,1)), ((0,2,3,4), (1,3))],  # One of the minimum cost orbits
+                "expected_best_Xs": [[[0b1101, 0b1010], [0b0010]], [[0b1101, 0b1010], [0b1000]]],
+                "expected_best_Zs": [[[(1, 0), (1, 11), (-1, 14), (-1, 5)], [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)]],
+                                      [[(1, 0), (1, 11), (-1, 14), (-1, 5)], [(1, 0), (1, 1), (1, 2), (1, 3), (-1, 4), (-1, 5), (-1, 6), (-1, 7)]]],
+                "best_cost": 60
+            }
+        ]
+    
     def test_compute_family_of_graphs(self):
-        correct_family_of_valid_graphs = {
-            0b0010: [(0, 1)],
-            0b0101: [(1, 2)],
-            0b0111: [(0, 2), (3, 4)],
-            0b1000: [(1, 3)],
-            0b1010: [(0, 3), (2, 4)],
-            0b1101: [(0, 4), (2, 3)],
-            0b1111: [(1, 4)]
-        }
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
         
-        B = [0b1110, 0b1100, 0b1001, 0b0100, 0b0011]
-        lxmixer = LXMixer(B, 4)
-        lxmixer.compute_family_of_valid_graphs()
+                lx.compute_family_of_valid_graphs()
         
-        # Sort edges for comparison
-        for key in correct_family_of_valid_graphs:
-            correct_family_of_valid_graphs[key] = sorted(correct_family_of_valid_graphs[key])
-        
-        for key in lxmixer.family_of_valid_graphs:
-            lxmixer.family_of_valid_graphs[key] = sorted(lxmixer.family_of_valid_graphs[key])
-        
-        self.assertEqual(lxmixer.family_of_valid_graphs, correct_family_of_valid_graphs)
+                with self.subTest("Family of valid graphs"):
+                    self.assertEqual(lx.family_of_valid_graphs, case["expected_family_of_valid_graphs"])
     
     def test_compute_all_orbits(self):
-        correct_orbits = {
-            (0, 2, 3, 4) : [0b1101, 0b1010],
-            (0, 1) : [0b0010],
-            (1, 2) : [0b0101],
-            (1, 3) : [0b1000],
-            (1, 4) : [0b1111]
-        }
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                
+                # Set the family of valid graphs for the mixer
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.compute_all_orbits()
+
+                with self.subTest("Orbits"):
+                    self.assertEqual(lx.orbits, case["expected_orbits"])
         
-        B = [0b1110, 0b1100, 0b1001, 0b0100, 0b0011]
-        lxmixer = LXMixer(B, 4)
-        lxmixer.family_of_valid_graphs = {
-            0b0010: [(0, 1)],
-            0b0101: [(1, 2)],
-            0b0111: [(0, 2), (3, 4)],
-            0b1000: [(1, 3)],
-            0b1010: [(0, 3), (2, 4)],
-            0b1101: [(0, 4), (2, 3)],
-            0b1111: [(1, 4)]
-        }
-        lxmixer.compute_all_orbits()
-        
-        orbits = {}
-        for nodes, orbit in lxmixer.orbits.items():
-            orbits[nodes] = orbit.Xs
-        
-        self.assertEqual(orbits, correct_orbits)
+    def test_compute_minimal_generating_sets(self):
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.orbits = case["expected_orbits"]
+                lx.compute_minimal_generating_sets()
+                
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        self.assertEqual(orbit.Zs, case["expected_mgs"][orbit_key])
+    
+    def test_compute_projector_stabilizers(self):
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.orbits = case["expected_orbits"]
+
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        orbit.Zs = case["expected_mgs"][orbit_key]
+                
+                lx.compute_projector_stabilizers()
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        self.assertEqual(orbit.Zs, case["expected_projectors"][orbit_key])
+    
+    def test_compute_costs(self):
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.orbits = case["expected_orbits"]
+                
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        orbit.Zs = case["expected_projectors"][orbit_key]
+
+                lx.compute_costs()
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        self.assertEqual(orbit.cost, case["expected_costs"][orbit_key])
+    
+    def test_find_best_mixer(self):
+        for case in self.test_cases:
+            with self.subTest(case=case):
+                case = copy.deepcopy(case)
+                lx = LXMixer(B=case["B"], nL=case["n"], method="largest_orbits")
+                lx.family_of_valid_graphs = case["expected_family_of_valid_graphs"]
+                lx.orbits = case["expected_orbits"]
+                
+                for orbit_key, orbit in lx.orbits.items():
+                    with self.subTest(orbit_key=orbit_key):
+                        orbit.Zs = case["expected_projectors"][orbit_key]
+                        orbit.cost = case["expected_costs"][orbit_key]
+
+                lx.find_best_mixer()
+                
+                self.assertEqual(lx.best_cost, case["best_cost"])
+                self.assertEqual(lx.best_combinations, case["expected_combinations"])
+                self.assertEqual(lx.best_Xs, case["expected_best_Xs"])
+                self.assertEqual(lx.best_Zs, case["expected_best_Zs"])
+
 
 if __name__ == '__main__':
     unittest.main()
