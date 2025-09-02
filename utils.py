@@ -192,11 +192,12 @@ def find_best_cost(Xs, Zs_operators):
             cost = ncnot(X_combos | Z) # We use the bitwise OR to find which qubits are acted upon by the Xs and Zs together and pass it to calculate the cost
             total_cost += cost #add up the cost of all Zs for that combination of Xs
         
-        all_costs[used_Xs] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
+        #NB I CHANGED COMBOS TO THEIR XOR
+        all_costs[X_combos] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
     
     if n == 1:
         best_Xs_reduced = all_x_operators[0][1]  
-        best_cost = all_costs[all_x_operators[0][0]]
+        best_cost = all_costs[all_x_operators[0][1]]
         return best_Xs_reduced, best_cost
 
     best_Xs_reduced = []  
@@ -204,8 +205,8 @@ def find_best_cost(Xs, Zs_operators):
     
     #the sorted keys, from highest to lowest cost
     all_keys = sorted(all_costs.keys(), key=lambda k: all_costs[k], reverse=True)
-    unavailable_combos = []
     processed_keys = set()
+    semi_processed_keys = set()
 
     for i in range(len(all_keys)):
         combos = []
@@ -215,23 +216,46 @@ def find_best_cost(Xs, Zs_operators):
         
         while combos:
             #pops the Xs with the lowest cost first
-            best_Xs, available_keys, unavailable_keys, total_cost = combos.pop()
-            # available_keys_reversed = list(reversed(available_keys))
-            # best_key = available_keys_reversed.pop(i)
-            best_key = available_keys.pop()
-            best_Xs.append(best_key)
+            best_Xs, available_keys, unavailable_combos, total_cost = combos.pop()
+            print("this was just popped from combos:", best_Xs, available_keys, unavailable_combos, total_cost)
+
+            if len(available_keys) < n:
+                print("processed_keys:", processed_keys, "semi_processed_keys:", semi_processed_keys, "available_keys:", available_keys)
+                semi_processed_keys = set()
+                available_keys = [key for key in key_copy if key not in processed_keys]
+                unavailable_combos = [key for key in processed_keys]
+                print("Available keys after filtering:", available_keys)
+                combos.append(([], available_keys, unavailable_combos, 0))
+                break
+
+            if len(best_Xs) == 0:
+                print("This loop is triggered, processed_keys:", processed_keys, "semi_processed_keys:", semi_processed_keys)
+                popped_key = available_keys.pop()
+                processed_keys.add(popped_key)
+                best_Xs = [popped_key]
+                unavailable_combos = [popped_key]
+                total_cost += all_costs[popped_key]
+                print("the new combo is: best_Xs:", best_Xs, "available_keys:", available_keys, "unavailable_combos:", unavailable_combos, "total_cost:", total_cost)
+                combos.append((best_Xs, available_keys, unavailable_combos, total_cost))
+                continue
             
-            processed_keys.add(best_key)  
+            
+            # best_key = available_keys.pop()
+            # best_Xs.append(best_key)
+            # processed_keys.add(best_key) 
+            # unavailable_keys.append(best_key) 
+            # total_cost = 0 
+            # total_cost += all_costs[best_key] 
+
             # print("Best key:", best_key, "available_keys:", available_keys, "best_Xs:", best_Xs, "unavailable_keys:", unavailable_keys)
-            unavailable_keys.append(best_key) 
-            total_cost = 0 
-            total_cost += all_costs[best_key]
             
-            for key in reversed(available_keys):
+            for key in reversed(available_keys):  
+                print("we are now in this loop")
                 # if set(key) in unavailable_keys or set(best_Xs) in unavailable_keys:
                 #     print("THIS IF-STATEMENT TRIGGERED")
                 #     continue
-                if set(key) in processed_keys:
+                if key in (processed_keys or semi_processed_keys):
+                    print("This is triggered, key is: ", key, "and processed_keys:", processed_keys, "semi_processed_keys:", semi_processed_keys)
                     continue
                 
                 best_Xs.append(key)
@@ -241,6 +265,7 @@ def find_best_cost(Xs, Zs_operators):
                     best_Xs.pop()  # Remove the last added key if it is already in unavailable_combos
                     continue
                 
+                # processed_keys.add(key)
                 print("Best Xs after appending best_key and key:", best_Xs)
                 # adding_key = set(key)
                 # new_unavailable_combos = [tuple(sorted(set().union(*combo, adding_key))) for r in range(1, len(unavailable_keys) + 1) for combo in combinations(unavailable_keys, r)]
@@ -249,15 +274,18 @@ def find_best_cost(Xs, Zs_operators):
                 # unavailable_keys.append(key)
 
                 total_cost += all_costs[key]
-                
+                new_unavailable_combos = [key ^ x for x in unavailable_combos if (key^x) not in unavailable_combos]  # XOR the new key with all unavailable combos
+                unavailable_combos.extend(new_unavailable_combos + ([key] if (key not in unavailable_combos) else []))
+
                 if total_cost > best_cost:
                     print("This resulted in a cost that is higher than the best cost, so we break", "total_cost:", total_cost, "best_cost:", best_cost)
                     best_Xs.pop()
                     total_cost -= all_costs[key]
+                    combos.append((best_Xs, available_keys, unavailable_combos, total_cost))
                     continue
                 
                 if len(best_Xs) == n:  
-                    best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
+                    best_Xs_reduced = best_Xs.copy()  # Create a copy instead of sharing reference
                     best_cost = total_cost
                     # unavailable_combos.append(best_Xs)
                     print("Best Xs reduced:", best_Xs_reduced, "Total cost:", best_cost)
@@ -267,7 +295,13 @@ def find_best_cost(Xs, Zs_operators):
                     # total_cost = 0
                     # break
                     best_Xs.pop()
-            break
+                    total_cost -= all_costs[key]
+                    combos.append((best_Xs, available_keys, unavailable_combos, total_cost))
+            
+            backtracking = best_Xs.pop()
+            total_cost -= all_costs[backtracking]
+            semi_processed_keys.add(backtracking)
+            combos.append((best_Xs, available_keys, unavailable_combos, total_cost))
         
         
 
@@ -311,9 +345,10 @@ def find_best_cost(Xs, Zs_operators):
 
 if __name__ == '__main__':
     # results = find_best_cost([0b0010, 0b0110, 0b1000], [(1, 0b0010), (1, 0b0110), (1, 0b1000), (1, 0b1010), (1, 0b1100), (1, 0b1110)])
+    results = find_best_cost([14, 12, 11], [(1, 0), (1, 13)])
     # results = find_best_cost([9, 21], [(1, 0), (1, 25), (-1, 20), (-1, 13), (1, 2), (1, 27), (-1, 22), (-1, 15)])
     # results = find_best_cost([0b1101, 0b1010], [(1, 0), (1, 11), (-1, 14), (-1, 5)])
-    results = find_best_cost([0b0010], [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)])
+    # results = find_best_cost([0b0010], [(1, 0), (1, 1), (-1, 4), (-1, 5), (-1, 8), (-1, 9), (1, 12), (1, 13)])
     print("Best combo of Xs (heuristic):", results[0],"\nBest cost (heuristic):", results[1])#, "\nBest combo of Xs (exact):", results[2], "\nBest cost (exact):", results[3])
     #print("Best combco of Xs reduced (heuristic):", results[1])
     
