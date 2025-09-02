@@ -195,6 +195,29 @@ def find_best_cost(Xs, Zs_operators):
         #NB I CHANGED COMBOS TO THEIR XOR
         all_costs[X_combos] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
     
+    # Brute force way
+    brute_all_keys = sorted(all_costs.keys(), key=lambda k: all_costs[k])
+    brute_cost = float('inf')
+    brute_Xs = []
+
+    for combo in combinations(brute_all_keys, n):
+        print("This is the combo we are looking at now:", combo)
+        print("The keys in this combo have costs:", [all_costs[key] for key in combo])
+        total_cost = sum(all_costs[key] for key in combo)
+        print("Total cost for this combo is:", total_cost)
+        
+        if total_cost >= brute_cost:
+            continue
+        
+        if not is_independent(combo):
+            continue
+        
+        else: 
+            print("The brute cost is now updated from", brute_cost, "to", total_cost)
+            brute_cost = total_cost
+            brute_Xs = combo
+            
+    """
     if n == 1:
         best_Xs_reduced = all_x_operators[0][1]  
         best_cost = all_costs[all_x_operators[0][1]]
@@ -340,9 +363,30 @@ def find_best_cost(Xs, Zs_operators):
                 
     # # The best_Xs are reduced by applying XOR to the tuples to get the string for the combination of the original Xs
     # best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
+    """
+    return brute_Xs, brute_cost #best_Xs_reduced, best_cost
 
-    return best_Xs_reduced, best_cost
+def is_independent(combo):
+    n = len(combo)
+    # Check all non-empty subsets
+    for r in range(1, n + 1):
+        for subset in combinations(combo, r):
+            hat = reduce(operator.xor, subset)
+            if hat == 0:
+                # Found a dependent subset
+                return False
+    return True
 
+
+
+# #checks all combinations of the n Xs to see if any of them are not linearly independent
+        # for r in range(1, n + 1):
+        #     for hats in combinations(combo, r):
+        #         hat = reduce(operator.xor, hats)
+        #         print("The hat for this combo is:", hat)
+        #         if hat == 0:
+        #             continue
+    
 if __name__ == '__main__':
     # results = find_best_cost([0b0010, 0b0110, 0b1000], [(1, 0b0010), (1, 0b0110), (1, 0b1000), (1, 0b1010), (1, 0b1100), (1, 0b1110)])
     results = find_best_cost([14, 12, 11], [(1, 0), (1, 13)])
