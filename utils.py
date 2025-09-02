@@ -196,24 +196,24 @@ def find_best_cost(Xs, Zs_operators):
         all_costs[X_combos] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
     
     # Brute force way
+    # Sorting the keys from lowest to highest cost
     brute_all_keys = sorted(all_costs.keys(), key=lambda k: all_costs[k])
     brute_cost = float('inf')
     brute_Xs = []
 
+    # Finding all combinations of n Xs (to generate an orbit of size 2^n) and checking which combination has the lowest cost and is linearly independent
     for combo in combinations(brute_all_keys, n):
-        print("This is the combo we are looking at now:", combo)
-        print("The keys in this combo have costs:", [all_costs[key] for key in combo])
         total_cost = sum(all_costs[key] for key in combo)
-        print("Total cost for this combo is:", total_cost)
         
+        # Disregard the combination if its cost is already higher than the best found cost
         if total_cost >= brute_cost:
             continue
         
+        # Check if the combination is linearly independent and therefore valid
         if not is_independent(combo):
             continue
         
         else: 
-            print("The brute cost is now updated from", brute_cost, "to", total_cost)
             brute_cost = total_cost
             brute_Xs = combo
             
@@ -367,8 +367,9 @@ def find_best_cost(Xs, Zs_operators):
     return brute_Xs, brute_cost #best_Xs_reduced, best_cost
 
 def is_independent(combo):
+    """Takes in a list of x-operators and checks if they are linearly independent"""
     n = len(combo)
-    # Check all non-empty subsets
+    # Check all non-empty subsets of the combo to see that they are linearly independent
     for r in range(1, n + 1):
         for subset in combinations(combo, r):
             hat = reduce(operator.xor, subset)
