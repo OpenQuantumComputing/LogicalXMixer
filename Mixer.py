@@ -375,6 +375,8 @@ class LXMixer:
             covered_nodes = {node for nodes in current_combination for node in nodes}
             
             if len(covered_nodes) == self.nB:
+                # if self.method == "semi_restricted_suborbits":
+                    # Do new depth-first search to find the best suborbit combinations in this combination (?).
                 if current_cost < self.best_cost:
                     self.best_cost = current_cost
                     # print(f"New best cost: {self.best_cost} for combination {current_combination}")
