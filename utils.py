@@ -219,6 +219,18 @@ def find_best_cost(Xs, Zs_operators):
             
     return brute_Xs, brute_cost #best_Xs_reduced, best_cost
 
+def is_independent(combo):
+    """Takes in a list of x-operators and checks if they are linearly independent"""
+    n = len(combo)
+    # Check all non-empty subsets of the combo to see that they are linearly independent
+    for r in range(1, n + 1):
+        for subset in combinations(combo, r):
+            hat = reduce(operator.xor, subset)
+            if hat == 0:
+                # Found a dependent subset
+                return False
+    return True
+
 if __name__ == '__main__':
     results = find_best_cost([0b0010, 0b0110, 0b1000], [(1, 0b0010), (1, 0b0110), (1, 0b1000), (1, 0b1010), (1, 0b1100), (1, 0b1110)])
 
