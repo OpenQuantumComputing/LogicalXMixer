@@ -192,52 +192,32 @@ def find_best_cost(Xs, Zs_operators):
             cost = ncnot(X_combos | Z) # We use the bitwise OR to find which qubits are acted upon by the Xs and Zs together and pass it to calculate the cost
             total_cost += cost #add up the cost of all Zs for that combination of Xs
         
-        all_costs[used_Xs] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
+        #NB I CHANGED COMBOS TO THEIR XOR
+        all_costs[X_combos] = total_cost #Here we store which Xs were usied and the total cost of using them with the Zs
     
-    # Find the best combination of Xs that minimizes the cost
-    best_Xs = [] # List of tuples that has the combinations of the original Xs that generate the orbit, f.ex. [(2,), (8,), (2, 6)] (here 2, 8, and 6 are the original Xs)
-    best_cost = 0 # Total cost of the best combination of Xs
-    covered = set()
-    required = set(Xs)
-    maybe_later = []
-    
-    while len(best_Xs) < n:
-        # We start by selecting the lowest cost from all_costs as we want to minimize the cost
-        lowest_cost = min(all_costs.values())
-        keys = [k for k, v in all_costs.items() if v == lowest_cost]
-        
-        # iterate through the keys with the lowest cost
-        for key in keys:
-            # Checks that either the key adds to the subset or that it is already covered (i.e. that we are actually creating an orbit)
-            if (not set(key).issubset(covered)) or (required == covered):  # If key has *any* uncovered elements
-                # Checks that if it is already covered, we use the lowest cost from maybe_later
-                if required == covered:
-                    new_key_and_cost = maybe_later.pop(0) if maybe_later else [key, lowest_cost]
-                    best_Xs.append(new_key_and_cost[0])
-                    best_cost += new_key_and_cost[1]
-                
-                # if the required set is not covered, we add the key to the best_Xs and update the covered set
-                else:
-                    covered.update(key)
-                    best_Xs.append(key)
-                    best_cost += lowest_cost
-                
-                # If we have enough Xs to cover the orbit, we break the loop
-                if len(best_Xs) == n:
-                    break
-                # We delete the key from all_costs as we have used it
-                del all_costs[key]
-            
-            # If the key does not add to the subset, we store it in maybe_later for later use (if we get a covered set and need to add more Xs)
-            else:
-                # We delete the key from all_costs as it does not add to the subset
-                del all_costs[key]  
-                maybe_later.append([key, lowest_cost])
-                
-    # The best_Xs are reduced by applying XOR to the tuples to get the string for the combination of the original Xs
-    best_Xs_reduced = [reduce(operator.xor, x) for x in best_Xs]
+    # Brute force way
+    # Sorting the keys from lowest to highest cost
+    brute_all_keys = sorted(all_costs.keys(), key=lambda k: all_costs[k])
+    brute_cost = float('inf')
+    brute_Xs = []
 
-    return best_Xs_reduced, best_cost
+    # Finding all combinations of n Xs (to generate an orbit of size 2^n) and checking which combination has the lowest cost and is linearly independent
+    for combo in combinations(brute_all_keys, n):
+        total_cost = sum(all_costs[key] for key in combo)
+        
+        # Disregard the combination if its cost is already higher than the best found cost
+        if total_cost >= brute_cost:
+            continue
+        
+        # Check if the combination is linearly independent and therefore valid
+        if not is_independent(combo):
+            continue
+        
+        else: 
+            brute_cost = total_cost
+            brute_Xs = combo
+            
+    return brute_Xs, brute_cost #best_Xs_reduced, best_cost
 
 if __name__ == '__main__':
     results = find_best_cost([0b0010, 0b0110, 0b1000], [(1, 0b0010), (1, 0b0110), (1, 0b1000), (1, 0b1010), (1, 0b1100), (1, 0b1110)])
