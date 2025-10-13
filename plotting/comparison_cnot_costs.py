@@ -28,10 +28,10 @@ def load_module(alias_name, file_path):
 
 # CONFIGURATION: Choose which mixers to run
 # Set to True to run that mixer, False to skip it
-RUN_ORIGINAL_LXMIXER = False    
+RUN_ORIGINAL_LXMIXER = True    
 RUN_LXMIXER_LARGEST_ORBIT = True        
-RUN_LXMIXER_ALL_SUBORBIT = False         
-RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = False  
+RUN_LXMIXER_ALL_SUBORBIT = True         
+RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT = True  
 
 # Helper variable for backward compatibility
 RUN_LXMIXER = RUN_LXMIXER_LARGEST_ORBIT or RUN_LXMIXER_ALL_SUBORBIT or RUN_LXMIXER_SEMI_RESTRICTED_SUBORBIT
@@ -798,7 +798,7 @@ def main(n, num_samples=100):
         plt.savefig(graphics_dir / f"Original_LXMixer_only_n{n}.pdf")
     else:
         method_str = "_".join(lxmixer_methods)
-    plt.savefig(graphics_dir / f"LXMixer_{method_str}_n{n}.pdf")
+        plt.savefig(graphics_dir / f"LXMixer_{method_str}_n{n}.pdf")
     plt.clf()
 
     # Create separate timing plot
